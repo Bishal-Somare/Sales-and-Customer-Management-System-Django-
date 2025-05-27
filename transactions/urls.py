@@ -7,12 +7,12 @@ from django.conf.urls.static import static
 from .views import (
     PurchaseListView, PurchaseDetailView, PurchaseCreateView,
     PurchaseUpdateView, PurchaseDeleteView, SaleListView,
-    SaleDetailView, SaleCreateView, SaleDeleteView, # Note: SaleCreateView is now function-based
+    SaleDetailView, SaleCreateView, SaleDeleteView, 
 
     export_sales_to_excel, export_purchases_to_excel,
     export_sales_to_pdf, export_detailed_sales_to_pdf,
     SaleCustomerSearchView,
-    mark_sale_as_paid,  # Add this import
+    # mark_sale_as_paid, # Removed this import
 )
 
 # URL patterns
@@ -30,8 +30,8 @@ urlpatterns = [
     path('new-sale/', SaleCreateView, name='sale-create'), # Use the function-based view
     path('sale/<int:pk>/delete/', SaleDeleteView.as_view(), name='sale-delete'),
     
-    # New URL for marking sale as paid
-    path('sale/<int:sale_id>/mark-as-paid/', mark_sale_as_paid, name='mark-sale-as-paid'),
+    # REMOVED URL for marking sale as paid
+    # path('sale/<int:sale_id>/mark-as-paid/', mark_sale_as_paid, name='mark-sale-as-paid'),
 
     # Sales and purchases export
     path('sales/export/', export_sales_to_excel, name='sales-export'),

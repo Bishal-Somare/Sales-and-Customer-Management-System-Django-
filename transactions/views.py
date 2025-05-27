@@ -7,10 +7,10 @@ import decimal # Import decimal
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.shortcuts import render, get_object_or_404
-from django.db import transaction
-from django.db.models import Prefetch
-from django.contrib.auth.decorators import login_required # For function-based views
-from django.views.decorators.http import require_POST # To ensure POST requests
+from django.db import transaction as django_transaction 
+from django.db.models import Prefetch, Sum
+from django.contrib.auth.decorators import login_required 
+from django.views.decorators.http import require_POST 
 
 # Class-based views
 from django.views.generic import DetailView, ListView
@@ -24,10 +24,9 @@ from openpyxl import Workbook
 
 # Local app imports
 from store.models import Item
-from accounts.models import Customer
+from accounts.models import Customer 
 from .models import Sale, Purchase, SaleDetail
 from .forms import PurchaseForm
-#importing Q for the customer searching
 from django.db.models import Q
 from functools import reduce
 import operator
@@ -38,7 +37,7 @@ import pdfkit
 
 logger = logging.getLogger(__name__)
 
-config = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe') # Ensure this path is correct or use environment variables
+config = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe') 
 
 def is_ajax(request):
     return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
@@ -72,7 +71,8 @@ def export_detailed_sales_to_pdf(request, pk):
 def export_sales_to_pdf(request):
     sales = Sale.objects.all()
     context = {'sales': sales}
-    pdf = render_to_pdf('transactions/sales_table.html', context) # This template has tax columns removed
+    # The sales_table.html template is used for PDF export, so changes there will reflect here.
+    pdf = render_to_pdf('transactions/sales_table.html', context) 
     if pdf:
         response = HttpResponse(pdf, content_type='application/pdf')
         response['Content-Disposition'] = 'inline; filename="sales_report.pdf"'
@@ -86,18 +86,24 @@ def export_sales_to_excel(request):
     worksheet.title = 'Sales'
     columns = [
         'ID', 'Date', 'Customer', 'Items', 'Sub Total', 'Discount %', 'Discount Amount',
-        'Grand Total', # Tax Amount, Tax Percentage removed
-        'Amount Paid', 'Amount Change'
+        'Grand Total', 
+        'Amount Paid', 
+        # 'Amount to Pay (This Sale)', # Removed from Excel export header
+        'Amount Change'
     ]
     worksheet.append(columns)
-    sales = Sale.objects.all().prefetch_related('saledetail_set__item')
+    sales = Sale.objects.all().prefetch_related('saledetail_set__item', 'customer') # Added customer prefetch
     for sale in sales:
+        # Ensure customer phone is accessed correctly; assuming customer.phone exists
+        customer_identifier = sale.customer.phone if sale.customer and sale.customer.phone else sale.customer.get_full_name()
         date_added = sale.date_added.replace(tzinfo=None) if sale.date_added.tzinfo else sale.date_added
         worksheet.append([
-            sale.id, date_added, sale.customer.phone, sale.get_items_display(),
+            sale.id, date_added, customer_identifier, sale.get_items_display(),
             sale.sub_total, sale.discount_percentage, sale.discount_amount,
-            sale.grand_total, # sale.tax_amount, sale.tax_percentage removed
-            sale.amount_paid, sale.amount_change
+            sale.grand_total, 
+            sale.amount_paid, 
+            # sale.amount_to_pay, # Removed from data row
+            sale.amount_change
         ])
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=sales.xlsx'
@@ -134,12 +140,12 @@ class SaleListView(LoginRequiredMixin, ListView):
     template_name = "transactions/sales_list.html"
     context_object_name = "sales"
     paginate_by = 40
-    ordering = ['-date_added'] # Changed to show recent sales first
+    ordering = ['-date_added'] 
     
     def get_queryset(self):
         return Sale.objects.all().select_related('customer').prefetch_related(
             Prefetch('saledetail_set', queryset=SaleDetail.objects.select_related('item'))
-        ).order_by(*self.ordering) # Use self.ordering
+        ).order_by(*self.ordering) 
 
 class SaleDetailView(LoginRequiredMixin, DetailView):
     model = Sale
@@ -151,8 +157,8 @@ class SaleDetailView(LoginRequiredMixin, DetailView):
         )
 
 
-@login_required # Ensure user is logged in
-def SaleCreateView(request): # Renamed for consistency, was SaleCreateView before
+@login_required 
+def SaleCreateView(request): 
     context = {
         "active_icon": "sales",
         "customers": [c.to_select2() for c in Customer.objects.all()]
@@ -169,22 +175,22 @@ def SaleCreateView(request): # Renamed for consistency, was SaleCreateView befor
                     'grand_total', 'amount_paid', 'amount_change', 'items'
                 ]
                 for field in required_fields:
-                    if field not in data or data[field] is None: # Also check for None
+                    if field not in data or data[field] is None: 
                         raise ValueError(f"Missing or null required field: {field}")
 
+                customer_instance = Customer.objects.get(id=int(data['customer']))
+
                 sale_attributes = {
-                    "customer": Customer.objects.get(id=int(data['customer'])),
+                    "customer": customer_instance,
                     "sub_total": decimal.Decimal(data["sub_total"]),
                     "discount_percentage": float(data["discount_percentage"]),
                     "discount_amount": decimal.Decimal(data["discount_amount"]),
                     "grand_total": decimal.Decimal(data["grand_total"]),
-                    # "tax_amount": decimal.Decimal(data.get("tax_amount", "0.0")), # Removed
-                    # "tax_percentage": float(data.get("tax_percentage", 0.0)), # Removed
                     "amount_paid": decimal.Decimal(data["amount_paid"]),
                     "amount_change": decimal.Decimal(data["amount_change"]),
                 }
 
-                with transaction.atomic():
+                with django_transaction.atomic():
                     new_sale = Sale.objects.create(**sale_attributes)
                     logger.info(f"Sale created: {new_sale}")
 
@@ -192,12 +198,12 @@ def SaleCreateView(request): # Renamed for consistency, was SaleCreateView befor
                     if not isinstance(items, list):
                         raise ValueError("Items should be a list")
 
-                    for item_data in items: # Renamed 'item' to 'item_data' to avoid conflict
+                    for item_data in items: 
                         if not all(k in item_data for k in ["id", "price", "quantity", "total_item"]):
                             raise ValueError("Item is missing required fields")
 
                         item_instance = Item.objects.get(id=int(item_data["id"]))
-                        item_quantity_sold = int(item_data["quantity"]) # Renamed for clarity
+                        item_quantity_sold = int(item_data["quantity"]) 
 
                         if item_instance.quantity < item_quantity_sold:
                             raise ValueError(f"Not enough stock for item: {item_instance.name}. Available: {item_instance.quantity}, Requested: {item_quantity_sold}")
@@ -214,6 +220,13 @@ def SaleCreateView(request): # Renamed for consistency, was SaleCreateView befor
 
                         item_instance.quantity -= item_quantity_sold
                         item_instance.save()
+
+                    current_sale_due = new_sale.amount_to_pay 
+                    customer_total_due_before_update = customer_instance.total_due if customer_instance.total_due is not None else decimal.Decimal('0.00')
+                    customer_instance.total_due = customer_total_due_before_update + current_sale_due
+                    customer_instance.save()
+                    logger.info(f"Customer {customer_instance.get_full_name()}'s total_due updated to {customer_instance.total_due}")
+
 
                 return JsonResponse({'status': 'success', 'message': 'Sale created successfully!', 'redirect': reverse('saleslist')})
             except json.JSONDecodeError:
@@ -237,40 +250,34 @@ def SaleCreateView(request): # Renamed for consistency, was SaleCreateView befor
 class SaleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Sale
     template_name = "transactions/saledelete.html"
+    
     def get_success_url(self):
         return reverse("saleslist")
+    
     def test_func(self):
         return self.request.user.is_superuser
 
-# --- New View for Marking Sale as Paid ---
-@login_required
-@require_POST # Ensures this view only accepts POST requests
-def mark_sale_as_paid(request, sale_id):
-    try:
-        sale = get_object_or_404(Sale, id=sale_id)
+    @django_transaction.atomic
+    def form_valid(self, form):
+        sale_to_delete = self.get_object()
+        customer = sale_to_delete.customer
+        
+        sale_due_amount = sale_to_delete.amount_to_pay
+        
+        if customer.total_due is not None and sale_due_amount is not None:
+            customer.total_due -= sale_due_amount
+            if customer.total_due < decimal.Decimal('0.00'):
+                customer.total_due = decimal.Decimal('0.00')
+            customer.save()
+            logger.info(f"Customer {customer.get_full_name()}'s total_due reduced by {sale_due_amount} to {customer.total_due} after deleting Sale ID {sale_to_delete.id}")
 
-        if not request.user.is_staff: # Example permission check, adjust as needed
-             return JsonResponse({'status': 'error', 'message': 'You do not have permission to perform this action.'}, status=403)
-
-        if sale.amount_to_pay > 0: # Use the property
-            sale.amount_paid = sale.grand_total
-            sale.amount_change = sale.amount_paid - sale.grand_total # This will be Decimal('0.00')
-            sale.save()
-            return JsonResponse({
-                'status': 'success',
-                'message': 'Sale marked as fully paid.',
-                'new_amount_paid': float(sale.amount_paid),
-                'new_amount_to_pay': float(sale.amount_to_pay), # Will be 0.00
-                'new_amount_change': float(sale.amount_change)  # Will be 0.00
-            })
-        else:
-            return JsonResponse({'status': 'info', 'message': 'Sale is already fully paid or overpaid.'})
-
-    except Exception as e:
-        logger.error(f"Error marking sale {sale_id} as paid: {e}", exc_info=True)
-        return JsonResponse({'status': 'error', 'message': 'An internal error occurred.'}, status=500)
-
-# --- End New View ---
+        for detail in sale_to_delete.saledetail_set.all():
+            item = detail.item
+            item.quantity += detail.quantity
+            item.save()
+            logger.info(f"Restocked {detail.quantity} of item '{item.name}' after deleting Sale ID {sale_to_delete.id}")
+            
+        return super().form_valid(form)
 
 
 class PurchaseListView(LoginRequiredMixin, ListView):
@@ -332,4 +339,4 @@ class SaleCustomerSearchView(LoginRequiredMixin,ListView):
                     for q in query_list
                 ))
             )
-        return queryset.order_by('-date_added') # Ensure consistent ordering
+        return queryset.order_by('-date_added')

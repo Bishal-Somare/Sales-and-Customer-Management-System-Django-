@@ -1,85 +1,86 @@
 {% extends 'store/base.html' %}
-{% load static %} {# Good practice, even if not directly used in this specific file's content block #}
+{% load static %} 
 
-{% block title %}Send Due Reminders{% endblock title %}
+{% block title %}Send Due Reminders & Record Payments{% endblock title %}
 
 {% block stylesheets %}
-    {{ block.super }} {# Includes stylesheets from base.html #}
-    <!-- Page-specific styles -->
+    {{ block.super }} 
     <style>
-        /*
-           Styles from your target file are kept here.
-           Bootstrap 5 is already included via base.html, so many basic styles
-           for body, container, h1, form-group, label will be influenced by Bootstrap.
-           We can refine these further if needed, but this preserves your structure.
-        */
         .top-left-button-container {
             margin-bottom: 20px;
-            padding-left: 1rem; /* Align with typical container padding */
+            padding-left: 1rem; 
             padding-top: 1rem;
         }
-        /* Override container margin if needed for this specific page, or rely on base.html's content padding */
-        .reminders-container { /* Using a more specific class to avoid conflict with Bootstrap's .container */
-            max-width: 700px; /* Slightly wider for better layout */
+        .reminders-container { 
+            max-width: 700px; 
             margin: 0 auto 20px auto;
             padding: 20px;
-            background-color: #fff; /* Assuming content area is white */
+            background-color: #fff; 
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Consistent shadow */
+            box-shadow: 0 0 10px rgba(0,0,0,0.1); 
         }
         .reminders-container h1 {
             color: #333;
             text-align: center;
             margin-bottom: 25px;
-            font-size: 1.75rem; /* Responsive heading size */
+            font-size: 1.75rem; 
         }
-        .form-group { /* Bootstrap already styles form-groups well, but keeping for specificity if needed */
+        .form-group { 
             margin-bottom: 1rem;
         }
         .button-group {
             margin-top: 20px;
             display: flex;
-            flex-direction: column; /* Stack buttons on small screens */
+            flex-direction: column; 
             gap: 10px;
         }
-        @media (min-width: 576px) { /* Apply side-by-side for sm screens and up */
+        @media (min-width: 576px) { 
             .button-group {
                 flex-direction: row;
                 justify-content: space-between;
             }
             .button-group button {
-                width: auto; /* Allow buttons to size based on content */
-                flex: 1; /* Make buttons share space equally */
+                width: auto; 
+                flex: 1; 
             }
             .button-group button + button {
-                margin-left: 10px; /* Add space between buttons when side-by-side */
+                margin-left: 10px; 
             }
         }
 
         .due-amount-display {
             margin-top: 10px;
             padding: 10px;
-            background-color: #e9ecef; /* Standard Bootstrap light gray */
-            border: 1px solid #ced4da; /* Standard Bootstrap border */
-            border-radius: .25rem; /* Bootstrap's default border-radius */
+            background-color: #e9ecef; 
+            border: 1px solid #ced4da; 
+            border-radius: .25rem; 
         }
-        /* Status messages will use Bootstrap alert classes, defined in JS */
+        #payment_recording_section { /* Renamed for clarity */
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: .25rem;
+            background-color: #f8f9fa;
+        }
+        .input-group-append .btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
     </style>
 {% endblock stylesheets %}
 
 {% block content %}
-<div class="container-fluid px-2 px-md-4 py-3 py-md-5"> {# Use container-fluid for full width content area like dashboard #}
+<div class="container-fluid px-2 px-md-4 py-3 py-md-5"> 
     <div class="top-left-button-container">
-        <a href="{% url 'dashboard' %}" class="btn btn-success btn-sm"> {# Made button smaller for consistency #}
+        <a href="{% url 'dashboard' %}" class="btn btn-success btn-sm"> 
             <i class="fas fa-home me-2"></i>Back to Home
         </a>
     </div>
 
-    <div class="reminders-container"> {# Changed class name #}
-        <h1>Send Due Payment Reminders</h1>
+    <div class="reminders-container"> 
+        <h1>Send Due Reminders & Record Payments</h1>
 
         <div class="form-group">
-            <label for="customer_select" class="form-label">Select Customer:</label> {# Added form-label for Bootstrap styling #}
+            <label for="customer_select" class="form-label">Select Customer:</label> 
             <select id="customer_select" class="form-select">
                 <option value="">-- Select a Customer --</option>
                 {% for customer in customers %}
@@ -89,25 +90,37 @@
         </div>
 
         <div id="due_amount_container" class="due-amount-display" style="display: none;">
-            <strong>Amount Due:</strong> <span id="due_amount_value"></span>
+            <strong>Current Amount Due:</strong> <span id="due_amount_value"></span>
         </div>
 
-        <div class="button-group">
-            <button id="send_single_button" class="btn btn-primary" disabled>Send to Selected Customer</button>
-            <button id="send_all_button" class="btn btn-info">Send to All Due Customers</button> {# Changed to btn-info for variety #}
+        <div id="payment_recording_section" style="display: none;" class="mt-3">
+            <h5 class="mb-3">Record Customer Payment</h5>
+            <div class="form-group">
+                <label for="payment_amount_input" class="form-label">Enter Amount Received:</label>
+                <div class="input-group">
+                    <input type="number" id="payment_amount_input" class="form-control" step="0.01" min="0.01" placeholder="e.g., 150.50">
+                    <button class="btn btn-outline-secondary" type="button" id="pay_full_amount_btn" title="Fill with full due amount">Pay Full</button>
+                </div>
+            </div>
+            <button id="record_payment_button" class="btn btn-success mt-2 w-100">
+                <i class="fas fa-check-circle me-2"></i>Record Payment
+            </button>
         </div>
 
-        {# Status messages will use Bootstrap alert classes, applied via JS #}
+        <div class="button-group mt-3">
+            <button id="send_single_button" class="btn btn-primary" disabled>Send Reminder to Selected Customer</button>
+            <button id="send_all_button" class="btn btn-info">Send Reminder to All Due Customers</button> 
+        </div>
+
         <div id="status_message_area" role="alert" style="display: none;"></div>
     </div>
 </div>
 {% endblock content %}
 
 {% block javascripts %}
-    {{ block.super }} {# Includes JavaScript from base.html (like jQuery and Bootstrap bundle) #}
+    {{ block.super }} 
     <script>
-        document.addEventListener('DOMContentLoaded', function() { // Ensure DOM is ready
-            // CSRF token for AJAX POST requests (Django standard way)
+        document.addEventListener('DOMContentLoaded', function() { 
             function getCookie(name) {
                 let cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
@@ -131,22 +144,44 @@
             const sendAllButton = document.getElementById('send_all_button');
             const statusMessageArea = document.getElementById('status_message_area');
 
+            const paymentRecordingSection = document.getElementById('payment_recording_section');
+            const paymentAmountInput = document.getElementById('payment_amount_input'); // Changed ID
+            const recordPaymentButton = document.getElementById('record_payment_button');
+            const payFullAmountButton = document.getElementById('pay_full_amount_btn'); // New button
+
+            let currentCustomerDueAmount = 0; // To store the fetched due amount
+
             function displayStatusMessage(message, type = 'info') {
                 statusMessageArea.textContent = message;
-                // Using Bootstrap alert classes
-                statusMessageArea.className = 'alert mt-3'; // Base class and margin
+                statusMessageArea.className = 'alert mt-3'; 
                 if (type === 'success') statusMessageArea.classList.add('alert-success');
                 else if (type === 'error') statusMessageArea.classList.add('alert-danger');
                 else if (type === 'warning') statusMessageArea.classList.add('alert-warning');
-                else statusMessageArea.classList.add('alert-info'); // Default to info
+                else statusMessageArea.classList.add('alert-info'); 
                 statusMessageArea.style.display = 'block';
+            }
+
+            function updatePaymentSectionVisibility(dueAmount) {
+                currentCustomerDueAmount = dueAmount; // Store current due
+                if (dueAmount > 0) {
+                    paymentRecordingSection.style.display = 'block';
+                    paymentAmountInput.max = dueAmount.toFixed(2);
+                    payFullAmountButton.disabled = false;
+                } else {
+                    paymentRecordingSection.style.display = 'none';
+                    payFullAmountButton.disabled = true;
+                }
             }
 
             customerSelect.addEventListener('change', function() {
                 const customerId = this.value;
-                sendSingleButton.disabled = true; // Disable button initially
-                dueAmountContainer.style.display = 'none'; // Hide due amount
-                statusMessageArea.style.display = 'none'; // Hide previous messages
+                sendSingleButton.disabled = true; 
+                dueAmountContainer.style.display = 'none'; 
+                statusMessageArea.style.display = 'none'; 
+                paymentRecordingSection.style.display = 'none'; 
+                paymentAmountInput.value = '';
+                currentCustomerDueAmount = 0;
+
 
                 if (customerId) {
                     dueAmountValue.textContent = 'Loading...';
@@ -157,7 +192,7 @@
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json',
-                            'X-CSRFToken': csrftoken // Good practice to send CSRF for GET if server checks, though not typical
+                            'X-CSRFToken': csrftoken 
                         }
                     })
                     .then(response => {
@@ -168,22 +203,32 @@
                         if (data.error) {
                             displayStatusMessage('Error: ' + data.error, 'error');
                             dueAmountContainer.style.display = 'none';
+                            updatePaymentSectionVisibility(0);
                         } else {
                             const dueAmount = parseFloat(data.due_amount);
                             dueAmountValue.textContent = 'Rs. ' + dueAmount.toFixed(2);
                             dueAmountContainer.style.display = 'block';
                             sendSingleButton.disabled = dueAmount <= 0;
+                            updatePaymentSectionVisibility(dueAmount);
+
                             if (dueAmount <= 0) {
                                 displayStatusMessage( (data.customer_name || 'This customer') + ' has no outstanding dues.', 'info');
                             } else {
-                                statusMessageArea.style.display = 'none'; // Clear if previously shown no dues
+                                statusMessageArea.style.display = 'none'; 
                             }
                         }
                     })
                     .catch(error => {
                         displayStatusMessage('Failed to fetch due amount. ' + error.message, 'error');
                         dueAmountContainer.style.display = 'none';
+                        updatePaymentSectionVisibility(0);
                     });
+                }
+            });
+
+            payFullAmountButton.addEventListener('click', function() {
+                if (currentCustomerDueAmount > 0) {
+                    paymentAmountInput.value = currentCustomerDueAmount.toFixed(2);
                 }
             });
 
@@ -197,6 +242,9 @@
                 displayStatusMessage('Sending email...', 'info');
                 sendSingleButton.disabled = true;
                 sendAllButton.disabled = true;
+                recordPaymentButton.disabled = true;
+                payFullAmountButton.disabled = true;
+
 
                 fetch(`{% url 'notifications:send_due_reminders_page' %}`, {
                     method: 'POST',
@@ -210,22 +258,18 @@
                 .then(response => response.json())
                 .then(data => {
                     displayStatusMessage(data.message || data.error, data.status || (data.error ? 'error' : 'info'));
-                    if(data.status === 'success' || data.status === 'info') {
-                        customerSelect.dispatchEvent(new Event('change')); // Re-evaluate after action
-                    } else {
-                        const currentDueText = dueAmountValue.textContent.replace('Rs. ','').replace('Loading...','0');
-                        const currentDue = parseFloat(currentDueText);
-                        sendSingleButton.disabled = isNaN(currentDue) || currentDue <= 0;
-                    }
+                    const currentDue = currentCustomerDueAmount; // Use stored value
+                    sendSingleButton.disabled = isNaN(currentDue) || currentDue <= 0;
                 })
                 .catch(error => {
                     displayStatusMessage('Request failed: ' + error.message, 'error');
-                    const currentDueText = dueAmountValue.textContent.replace('Rs. ','').replace('Loading...','0');
-                    const currentDue = parseFloat(currentDueText);
+                    const currentDue = currentCustomerDueAmount;
                     sendSingleButton.disabled = isNaN(currentDue) || currentDue <= 0;
                 })
                 .finally(() => {
                     sendAllButton.disabled = false;
+                    recordPaymentButton.disabled = currentCustomerDueAmount <=0;
+                    payFullAmountButton.disabled = currentCustomerDueAmount <=0;
                 });
             });
 
@@ -236,6 +280,8 @@
                 displayStatusMessage('Processing... Sending emails to all due customers. This may take a moment.', 'info');
                 sendAllButton.disabled = true;
                 sendSingleButton.disabled = true;
+                recordPaymentButton.disabled = true;
+                payFullAmountButton.disabled = true;
 
                 fetch(`{% url 'notifications:send_due_reminders_page' %}`, {
                     method: 'POST',
@@ -250,7 +296,8 @@
                 .then(data => {
                     displayStatusMessage(data.message || data.error, data.status || (data.error ? 'error' : 'info'));
                     if (customerSelect.value) {
-                        customerSelect.dispatchEvent(new Event('change')); // Re-evaluate selected customer's status
+                        const currentDue = currentCustomerDueAmount;
+                        sendSingleButton.disabled = isNaN(currentDue) || currentDue <= 0;
                     } else {
                         sendSingleButton.disabled = true;
                     }
@@ -258,8 +305,7 @@
                 .catch(error => {
                     displayStatusMessage('Request failed: ' + error.message, 'error');
                     if (customerSelect.value) {
-                        const currentDueText = dueAmountValue.textContent.replace('Rs. ','').replace('Loading...','0');
-                        const currentDue = parseFloat(currentDueText);
+                        const currentDue = currentCustomerDueAmount;
                         sendSingleButton.disabled = isNaN(currentDue) || currentDue <= 0;
                     } else {
                         sendSingleButton.disabled = true;
@@ -267,6 +313,79 @@
                 })
                 .finally(() => {
                     sendAllButton.disabled = false;
+                    const canRecordPayment = customerSelect.value && currentCustomerDueAmount > 0;
+                    recordPaymentButton.disabled = !canRecordPayment;
+                    payFullAmountButton.disabled = !canRecordPayment;
+                });
+            });
+
+            recordPaymentButton.addEventListener('click', function() {
+                const customerId = customerSelect.value;
+                const paymentAmountStr = paymentAmountInput.value; // Use updated ID
+
+                if (!customerId) {
+                    displayStatusMessage('Please select a customer.', 'warning');
+                    return;
+                }
+                if (!paymentAmountStr || parseFloat(paymentAmountStr) <= 0) {
+                    displayStatusMessage('Please enter a valid positive payment amount.', 'warning');
+                    paymentAmountInput.focus();
+                    return;
+                }
+                
+                const paymentAmount = parseFloat(paymentAmountStr);
+                const currentDue = currentCustomerDueAmount;
+
+                if (paymentAmount > currentDue) {
+                    displayStatusMessage('Payment amount (Rs. ' + paymentAmount.toFixed(2) + ') cannot exceed the current due amount (Rs. ' + currentDue.toFixed(2) + ').', 'warning');
+                    paymentAmountInput.focus();
+                    return;
+                }
+
+                displayStatusMessage('Processing payment...', 'info');
+                this.disabled = true; 
+                sendSingleButton.disabled = true;
+                sendAllButton.disabled = true;
+                payFullAmountButton.disabled = true;
+
+                fetch(`{% url 'notifications:record_partial_payment_ajax' %}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrftoken 
+                    },
+                    body: JSON.stringify({ customer_id: customerId, payment_amount: paymentAmountStr })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        displayStatusMessage(data.message, 'success');
+                        const newDue = parseFloat(data.new_due_amount);
+                        dueAmountValue.textContent = 'Rs. ' + newDue.toFixed(2);
+                        paymentAmountInput.value = ''; 
+                        
+                        updatePaymentSectionVisibility(newDue); // This will update currentCustomerDueAmount
+
+                        if (newDue <= 0) {
+                            sendSingleButton.disabled = true;
+                            displayStatusMessage( (customerSelect.options[customerSelect.selectedIndex].text.split(' (')[0] || 'This customer') + ' has no outstanding dues.', 'info');
+                        } else {
+                            sendSingleButton.disabled = false;
+                        }
+                    } else {
+                        displayStatusMessage(data.error || 'Failed to record payment.', 'error');
+                    }
+                })
+                .catch(error => {
+                    displayStatusMessage('Request failed: ' + error.message, 'error');
+                })
+                .finally(() => {
+                    recordPaymentButton.disabled = false; 
+                    const finalDue = currentCustomerDueAmount; // currentCustomerDueAmount is updated by updatePaymentSectionVisibility
+                    sendSingleButton.disabled = isNaN(finalDue) || finalDue <= 0;
+                    sendAllButton.disabled = false;
+                    payFullAmountButton.disabled = isNaN(finalDue) || finalDue <=0;
                 });
             });
         });

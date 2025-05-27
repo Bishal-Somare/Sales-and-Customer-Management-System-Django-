@@ -1,6 +1,6 @@
-
 from django.db import models
 from django.contrib.auth.models import User
+import decimal # Import decimal
 
 from django_extensions.db.fields import AutoSlugField
 from imagekit.models import ProcessedImageField
@@ -130,16 +130,30 @@ class Customer(models.Model):
     address = models.TextField(max_length=256, blank=True, null=True)
     email = models.EmailField(max_length=256, blank=True, null=True)
     phone = models.CharField(max_length=30, blank=True, null=True)
-    # loyalty_points = models.IntegerField(default=0)
+    # loyalty_points = models.IntegerField(default=0) # Commented out as per original
+    total_due = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=decimal.Decimal('0.00'), # Use decimal.Decimal for default
+        verbose_name="Total Due Amount"
+    )
+
 
     class Meta:
         db_table = 'Customers'
 
     def __str__(self) -> str:
-        return self.first_name + " " + self.last_name
+        full_name = self.first_name
+        if self.last_name:
+            full_name += " " + self.last_name
+        return full_name
+
 
     def get_full_name(self):
-        return self.first_name + " " + self.last_name
+        full_name = self.first_name
+        if self.last_name:
+            full_name += " " + self.last_name
+        return full_name
 
     def to_select2(self):
         item = {
