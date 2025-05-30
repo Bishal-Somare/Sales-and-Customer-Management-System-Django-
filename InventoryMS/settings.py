@@ -1,3 +1,4 @@
+# InventoryMS/settings.py
 import os
 from pathlib import Path
 
@@ -9,28 +10,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-g_n2+2bznu6e@1wel!i(&-4tp86_7lop5395ww+i4x%9*7^old'
+SECRET_KEY = 'django-insecure-g_n2+2bznu6e@1wel!i(&-4tp86_7lop5395ww+i4x%9*7^old' # CHANGE THIS IN PRODUCTION
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 ALLOWED_HOSTS = []
 
-# DEBUG = False
-# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-
 
 # Application definition
-
 INSTALLED_APPS = [
+    'daphne', # Must be first for runserver override
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.humanize',  # <--- ADD THIS LINE
+    'django.contrib.humanize',
+    'channels', # For Django Channels
 
-
+    # Third-party apps
     'phonenumber_field',
     'crispy_forms',
     'crispy_bootstrap5',
@@ -39,11 +38,13 @@ INSTALLED_APPS = [
     'django_filters',
     'django_tables2',
 
+    # Your apps
     'store.apps.StoreConfig',
     'accounts.apps.AccountsConfig',
     'transactions.apps.TransactionsConfig',
     'invoice.apps.InvoiceConfig',
     'bills.apps.BillsConfig',
+    'notifications.apps.NotificationsConfig', # Use the AppConfig for the scheduler
 ]
 
 MIDDLEWARE = [
@@ -54,8 +55,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Add your custom middleware for integrity error
-    'InventoryMS.middleware.IntegrityErrorMiddleware', 
+    'InventoryMS.middleware.IntegrityErrorMiddleware', # Your custom middleware
 ]
 
 ROOT_URLCONF = 'InventoryMS.urls'
@@ -63,7 +63,7 @@ ROOT_URLCONF = 'InventoryMS.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], # Optional: project-level templates directory
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -77,11 +77,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'InventoryMS.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
+ASGI_APPLICATION = 'InventoryMS.asgi.application' # Corrected casing to 'InventoryMS'
 
 DATABASES = {
     'default': {
@@ -90,58 +86,56 @@ DATABASES = {
     }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
+# Channel layers (for development, use InMemoryChannelLayer)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 # Internationalization
-# https://docs.djangoproject.com/en/4.1/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = 'UTC' # Consider setting to your local timezone e.g., 'Asia/Kolkata'
 USE_I18N = True
-
 USE_TZ = True
 
-LOGIN_URL = 'user-login'
-LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_URL = 'logout'
+# Authentication URLs
+LOGIN_URL = 'user-login' # Ensure this URL name exists in accounts.urls
+LOGIN_REDIRECT_URL = 'dashboard' # Ensure this URL name exists (likely in store.urls)
+LOGOUT_URL = 'user-logout' # Ensure this URL name exists
+LOGOUT_REDIRECT_URL = 'user-login' # Or 'dashboard' or any other page
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.1/howto/static-files/
-
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR,'static')
-]
-MEDIA_ROOT = os.path.join(BASE_DIR, 'static/images')
-MEDIA_URL = '/images/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] # For project-wide static files not tied to an app
+
+# Media files (User-uploaded content)
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media') # Store media files in a 'media' directory at the project root
+MEDIA_URL = '/media/'
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Crispy Forms settings
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-#handling the custom 404 error page
+# Custom 404 handler
+HANDLER404 = 'accounts.views.custom_404_view' # Ensure this view is defined in accounts/views.py
 
-HANDLER404 = 'accounts.views.custom_404_handler' 
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "ganasaleslite@gmail.com" # Your actual email
+EMAIL_HOST_PASSWORD = "jhghdpvzfuxlxgmq"   # Your actual app password for Gmail
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+SERVER_EMAIL = EMAIL_HOST_USER

@@ -14,5 +14,12 @@ urlpatterns = [
     path('invoice/', include('invoice.urls')),
     path('bills/', include('bills.urls')),
     # re_path(r'^.*$', views.custom_404_view),  # this catches any non-matched URL
+    #for notifications
+    path('notifications/', include('notifications.urls', namespace='notifications')),
+    
 
 ]
+admin.site.site_header='GanaSalesLite'
+admin.site.site_title='GanasalesLite'
+
+

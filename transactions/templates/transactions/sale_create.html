@@ -85,27 +85,20 @@
                             </select>
                         </div>
                          
-            <!-- New discount fields -->
-            <div class="mb-3">
-                <label for="discount_percentage" class="form-label">Discount (%)</label>
-                <input name="discount_percentage" type="number" class="form-control" id="discount_percentage" aria-label="Discount Percentage" value="0" required>
-            </div>
-            <div class="mb-3">
-                <label for="discount_amount" class="form-label">Discount Amount</label>
-                <input name="discount_amount" type="number" class="form-control" id="discount_amount" aria-label="Discount Amount" required>
-            </div>
+                        <!-- New discount fields -->
+                        <div class="mb-3">
+                            <label for="discount_percentage" class="form-label">Discount (%)</label>
+                            <input name="discount_percentage" type="number" class="form-control" id="discount_percentage" aria-label="Discount Percentage" value="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="discount_amount" class="form-label">Discount Amount</label>
+                            <input name="discount_amount" type="number" class="form-control" id="discount_amount" aria-label="Discount Amount" required>
+                        </div>
                         <div class="mb-3">
                             <label for="sub_total" class="form-label">Subtotal</label>
                             <input name="sub_total" type="number" class="form-control" id="sub_total" aria-label="Subtotal" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="tax_percentage" class="form-label">Tax Inclusive (%)</label>
-                            <input name="tax_percentage" type="number" class="form-control" id="tax_percentage" aria-label="Tax Inclusive" value="0" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="tax_amount" class="form-label">Tax Amount</label>
-                            <input name="tax_amount" type="number" class="form-control" id="tax_amount" aria-label="Tax Amount" required>
-                        </div>
+                        <!-- Tax fields removed -->
                         <div class="mb-3">
                             <label for="grand_total" class="form-label">Grand Total</label>
                             <input name="grand_total" type="number" class="form-control" id="grand_total" aria-label="Grand Total" required>
@@ -162,8 +155,8 @@
             discount_percentage: 0.00,
             discount_amount: 0.00,
             grand_total: 0.00,
-            tax_amount: 0.00,
-            tax_percentage: 0.00,
+            // tax_amount: 0.00, // Removed
+            // tax_percentage: 0.00, // Removed
             amount_payed: 0.00,
             amount_change: 0.00,
             items: []
@@ -172,11 +165,10 @@
         calculate_sale: function () {
             // Subtotal of all items added
             var sub_total = 0.00;
-
             
+            var discount_percentage = parseFloat($('input[name="discount_percentage"]').val()) || 0;
+            // var tax_percentage = parseFloat($('input[name="tax_percentage"]').val()) || 0; // Removed
 
-        var discount_percentage = parseFloat($('input[name="discount_percentage"]').val()) || 0;
-        var tax_percentage = parseFloat($('input[name="tax_percentage"]').val()) || 0;
             // Calculates the total for each item
             $.each(this.products.items, function (pos, dict) {
                 dict.pos = pos;
@@ -185,26 +177,26 @@
                 sub_total += roundTo(dict.total_item, 2);
             });
 
-             // Update the sale subtotal
-        this.products.sub_total = roundTo(sub_total, 2);
-        
-        // Calculate discount amount
-        this.products.discount_amount = roundTo(this.products.sub_total * (discount_percentage / 100), 2);
-        
-        // Calculate price after discount
-        var after_discount = roundTo(this.products.sub_total - this.products.discount_amount, 2);
-        
-        // Calculate tax amount on the discounted price
-        this.products.tax_amount = roundTo(after_discount * (tax_percentage / 100), 2);
-        
-        // Calculate grand total (discounted price + tax)
-        this.products.grand_total = roundTo(after_discount + this.products.tax_amount, 2);
+            // Update the sale subtotal
+            this.products.sub_total = roundTo(sub_total, 2);
+            
+            // Calculate discount amount
+            this.products.discount_amount = roundTo(this.products.sub_total * (discount_percentage / 100), 2);
+            
+            // Calculate price after discount
+            var after_discount = roundTo(this.products.sub_total - this.products.discount_amount, 2);
+            
+            // Calculate tax amount on the discounted price - Removed
+            // this.products.tax_amount = roundTo(after_discount * (tax_percentage / 100), 2); // Removed
+            
+            // Calculate grand total (discounted price)
+            this.products.grand_total = roundTo(after_discount, 2); // Grand total is now after_discount
 
-        // Update form fields
-        $('input[name="sub_total"]').val(this.products.sub_total);
-        $('input[name="discount_amount"]').val(this.products.discount_amount);
-        $('input[name="tax_amount"]').val(this.products.tax_amount);
-        $('input[name="grand_total"]').val(this.products.grand_total);
+            // Update form fields
+            $('input[name="sub_total"]').val(this.products.sub_total);
+            $('input[name="discount_amount"]').val(this.products.discount_amount);
+            // $('input[name="tax_amount"]').val(this.products.tax_amount); // Removed
+            $('input[name="grand_total"]').val(this.products.grand_total);
         },
         // Adds an item to the sale object
         add_item: function (item) {
@@ -270,7 +262,8 @@
     };
 
     $(document).ready(function () {
-        // Tax percentage touchspin
+        // Tax percentage touchspin - Removed
+        /*
         $("input[name='tax_percentage']").TouchSpin({
             min: 0,
             max: 100,
@@ -282,30 +275,36 @@
         }).on('change', function () {
             sale.calculate_sale();
         });
-         // Add TouchSpin for discount percentage
-    $("input[name='discount_percentage']").TouchSpin({
-        min: 0,
-        max: 100,
-        step: 1,
-        decimals: 2,
-        boostat: 5,
-        maxboostedstep: 10,
-        postfix: '%'
-    }).on('change', function () {
-        sale.calculate_sale();
-    });
+        */
+
+        // Add TouchSpin for discount percentage
+        $("input[name='discount_percentage']").TouchSpin({
+            min: 0,
+            max: 100,
+            step: 1,
+            decimals: 2,
+            boostat: 5,
+            maxboostedstep: 10,
+            postfix: '%'
+        }).on('change', function () {
+            sale.calculate_sale();
+        });
     
-    // Make discount amount read-only as it's calculated automatically
-    $("input[name='discount_amount']").prop('readonly', true);
+        // Make discount amount read-only as it's calculated automatically
+        $("input[name='discount_amount']").prop('readonly', true);
+        // Make sub_total and grand_total read-only as they are calculated
+        $("input[name='sub_total']").prop('readonly', true);
+        $("input[name='grand_total']").prop('readonly', true);
+
 
         // Select2 customers
-        $('#searchbox_customers').select2({
+        $('#searchbox_customers').select2({ // This ID seems to be for a different element, the actual customer dropdown is #customer
             delay: 250,
             placeholder: "Select a customer",
             allowClear: true,
             minimumInputLength: 1,
             ajax: {
-                url: "{% url 'get_customers' %}",
+                url: "{% url 'get_customers' %}", // Assuming this URL exists for AJAX customer search
                 type: 'POST',
                 data: function (params) {
                     return {
@@ -324,6 +323,12 @@
             var data = e.params.data;
             sale.products.customer = data.id;
         });
+        
+        // If using the static dropdown for customers:
+        $('#customer').on('change', function() {
+            sale.products.customer = $(this).val();
+        });
+
 
         // Select2 items searchbox
         $('#searchbox_items').select2({
@@ -333,7 +338,7 @@
             allowClear: true,
             templateResult: template_item_searchbox,
             ajax: {
-                url: "{% url 'get_items' %}",
+                url: "{% url 'get_items' %}", // Assuming this URL exists for AJAX item search
                 type: 'POST',
                 data: function (params) {
                     return {
@@ -397,7 +402,7 @@
             // Calculate the sale with the new quantity
             sale.calculate_sale();
             // Find the row to update the item total
-            $('td:eq(4)', tblItems.row(tr.row).node()).html(sale.products.items[tr.row].total_item + ' Rs');
+            $('td:eq(4)', tblItems.row(tr.row).node()).html(roundTo(sale.products.items[tr.row].total_item,2) + ' Rs');
         });
 
         // Delete all items
@@ -460,36 +465,29 @@
                 error: errorCallback
             });
         }
-
-        // Function to round numbers
-        function roundTo(value, decimals) {
-            const factor = Math.pow(10, decimals);
-            return Math.round(value * factor) / factor;
-        }
-
        
-    // Update the form submission handler to include discount fields
-    $('form#form_sale').on('submit', function (event) {
-        event.preventDefault();
+        // Update the form submission handler to include discount fields
+        $('form#form_sale').on('submit', function (event) {
+            event.preventDefault();
 
-        // Gather sale details
-        var amountPaid = parseFloat($('input[name="amount_paid"]').val());
-        var grandTotal = parseFloat($('input[name="grand_total"]').val());
-        var amountChange = roundTo(amountPaid - grandTotal, 2);
+            // Gather sale details
+            var amountPaid = parseFloat($('input[name="amount_paid"]').val());
+            var grandTotal = parseFloat($('input[name="grand_total"]').val());
+            var amountChange = roundTo(amountPaid - grandTotal, 2);
 
-        // Gather sale details including discount fields
-        var formData = {
-            customer: $('select[name="customer"]').val(),
-            sub_total: $('input[name="sub_total"]').val(),
-            discount_percentage: $('input[name="discount_percentage"]').val(),
-            discount_amount: $('input[name="discount_amount"]').val(),
-            grand_total: grandTotal,
-            tax_percentage: $('input[name="tax_percentage"]').val(),
-            tax_amount: $('input[name="tax_amount"]').val(),
-            amount_paid: amountPaid,
-            amount_change: amountChange,
-            items: sale.products.items
-        };
+            // Gather sale details including discount fields
+            var formData = {
+                customer: $('select[name="customer"]').val(),
+                sub_total: $('input[name="sub_total"]').val(),
+                discount_percentage: $('input[name="discount_percentage"]').val(),
+                discount_amount: $('input[name="discount_amount"]').val(),
+                grand_total: grandTotal,
+                // tax_percentage: $('input[name="tax_percentage"]').val(), // Removed
+                // tax_amount: $('input[name="tax_amount"]').val(), // Removed
+                amount_paid: amountPaid,
+                amount_change: amountChange,
+                items: sale.products.items
+            };
 
             // Check if amount_change is present
             if (isNaN(amountChange)) {
@@ -500,6 +498,17 @@
                 });
                 return;
             }
+             // Check if customer is selected
+            if (!formData.customer) {
+                Swal.fire({icon: 'error', title: 'Error', text: 'Customer is required!'});
+                return;
+            }
+            // Check if there are items in the sale
+            if (formData.items.length === 0) {
+                Swal.fire({icon: 'error', title: 'Error', text: 'Please add items to the sale!'});
+                return;
+            }
+
 
             // Get CSRF token
             var csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
@@ -516,12 +525,21 @@
                 success: function (response) {
                     // Handle success response
                     sale.products.items = [];
-                    sale.list_item();
+                    sale.list_item(); // This will also call calculate_sale and update totals to 0
                     $('form#form_sale').trigger('reset');
+                    $('#customer').val('').trigger('change'); // Reset customer dropdown
+                    // Re-initialize touchspin for discount_percentage after reset
+                    $("input[name='discount_percentage']").val(0).trigger('change');
+
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Success',
                         text: 'Sale has been completed successfully!'
+                    }).then(() => {
+                        if(response.redirect){
+                             window.location.href = response.redirect;
+                        }
                     });
                 },
                 error: function (xhr) {

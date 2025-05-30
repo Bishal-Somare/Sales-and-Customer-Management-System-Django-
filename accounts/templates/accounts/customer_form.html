@@ -5,17 +5,41 @@
     <h1 class="mb-4">{% if form.instance.pk %}Edit{% else %}Create{% endif %} Customer</h1>
     <form method="post">
       {% csrf_token %}
+
+      {# Display non-field errors (e.g., errors from form's clean method) #}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
       <div class="row mb-3">
         <div class="col-md-6">
           <div class="form-group">
             {{ form.first_name.label_tag }}
             {{ form.first_name }}
+            {% if form.first_name.errors %}
+              <div class="text-danger small mt-1">
+                {% for error in form.first_name.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
           </div>
         </div>
         <div class="col-md-6">
           <div class="form-group">
             {{ form.last_name.label_tag }}
             {{ form.last_name }}
+            {% if form.last_name.errors %}
+              <div class="text-danger small mt-1">
+                 {% for error in form.last_name.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -24,6 +48,13 @@
           <div class="form-group">
             {{ form.address.label_tag }}
             {{ form.address }}
+            {% if form.address.errors %}
+              <div class="text-danger small mt-1">
+                 {% for error in form.address.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -32,23 +63,44 @@
           <div class="form-group">
             {{ form.email.label_tag }}
             {{ form.email }}
+            {% if form.email.errors %}
+              <div class="text-danger small mt-1">
+                 {% for error in form.email.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
           </div>
         </div>
         <div class="col-md-6">
           <div class="form-group">
             {{ form.phone.label_tag }}
             {{ form.phone }}
+            {% if form.phone.errors %}
+              <div class="text-danger small mt-1">
+                 {% for error in form.phone.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
           </div>
         </div>
       </div>
-      <div class="row mb-3">
+      {% comment %} <div class="row mb-3">
         <div class="col-md-6">
           <div class="form-group">
             {{ form.loyalty_points.label_tag }}
             {{ form.loyalty_points }}
+            {% if form.loyalty_points.errors %}
+              <div class="text-danger small mt-1">
+                 {% for error in form.loyalty_points.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
           </div>
         </div>
-      </div>
+      </div> {% endcomment %}
       <button type="submit" class="btn btn-primary">
         <i class="fas fa-save"></i> Save
       </button>

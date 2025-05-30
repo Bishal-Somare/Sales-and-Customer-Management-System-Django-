@@ -56,7 +56,6 @@
             <ul class="pagination">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <!-- CORRECTED LINE BELOW -->
                     <a class="page-link" href="?{% querystring page=page_obj.previous_page_number %}" aria-label="Previous">
                         <span aria-hidden="true">«</span>
                     </a>
@@ -76,7 +75,6 @@
                 </li>
                 {% else %}
                 <li class="page-item">
-                    <!-- CORRECTED LINE BELOW -->
                     <a class="page-link" href="?{% querystring page=i %}">{{ i }}</a>
                 </li>
                 {% endif %}
@@ -84,7 +82,6 @@
                 
                 {% if page_obj.has_next %}
                 <li class="page-item">
-                    <!-- CORRECTED LINE BELOW -->
                     <a class="page-link" href="?{% querystring page=page_obj.next_page_number %}" aria-label="Next">
                         <span aria-hidden="true">»</span>
                     </a>
@@ -108,92 +105,6 @@
 <!-- SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
-<script>
-$(document).ready(function() {
-    // Function to get CSRF token (Django's recommended way)
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    const csrftoken = getCookie('csrftoken');
+{# Removed JavaScript for .payed-btn as the button is removed #}
 
-    $('body').on('click', '.payed-btn', function() {
-        const saleId = $(this).data('sale-id');
-        const payedButton = $(this); 
-        const tableRow = payedButton.closest('tr');
-
-        Swal.fire({
-            title: 'Confirm Payment',
-            text: "Are you sure this sale's pending amount is now fully paid?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#28a745',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, Payed!',
-            cancelButtonText: 'No'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: `/transactions/sale/${saleId}/mark-as-paid/`, 
-                    type: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            Swal.fire('Paid!', response.message, 'success');
-                            tableRow.find('.amount-paid').text(response.new_amount_paid.toFixed(2));
-                            tableRow.find('.amount-to-pay').text(response.new_amount_to_pay.toFixed(2));
-                            
-                            let displayChange = response.new_amount_change > 0 ? response.new_amount_change.toFixed(2) : '0.00';
-                            tableRow.find('.amount-change').text(displayChange);
-                            
-                            payedButton.remove();
-                        } else {
-                            Swal.fire(
-                                'Info!',
-                                response.message,
-                                response.status === 'info' ? 'info' : 'error'
-                            );
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        let errorMessage = 'Something went wrong. Please try again.';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMessage = xhr.responseJSON.message;
-                        } else if (xhr.responseText) {
-                            try {
-                                const err = JSON.parse(xhr.responseText);
-                                if (err.message) errorMessage = err.message;
-                            } catch (e) {
-                                if (xhr.status === 0) {
-                                    errorMessage = 'Network error. Please check your connection.';
-                                } else if (xhr.status === 403) {
-                                    errorMessage = 'You do not have permission for this action.';
-                                } else {
-                                     errorMessage = `Error ${xhr.status}: ${error}`;
-                                }
-                            }
-                        }
-                        Swal.fire('Error!', errorMessage, 'error');
-                        console.error("AJAX error details:", xhr, status, error);
-                    }
-                });
-            }
-        });
-    });
-});
-</script>
 {% endblock javascripts %}

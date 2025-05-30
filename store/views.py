@@ -40,7 +40,7 @@ import django_tables2 as tables
 from django_tables2.export.views import ExportMixin
 
 # Local app imports
-from accounts.models import Profile, Vendor
+from accounts.models import Profile, Vendor, Customer # Added Customer import
 # Import Sale, SaleDetail, and Purchase from transactions.models
 from transactions.models import Sale, SaleDetail, Purchase
 from .models import Category, Item, Delivery
@@ -60,12 +60,12 @@ def dashboard(request):
     )
     items_count = items.count()
     profiles_count = profiles.count()
-    all_sales_qs = Sale.objects.all() # QuerySet for all sales
+    all_sales_qs = Sale.objects.all() 
 
-    # Calculate Total Accounts Receivable
-    total_accounts_receivable = decimal.Decimal('0.00')
-    for sale_record in all_sales_qs:
-        total_accounts_receivable += sale_record.amount_to_pay # Uses the amount_to_pay property
+    # Calculate Total Accounts Receivable from Customer.total_due
+    receivable_agg = Customer.objects.aggregate(total_due_sum=Sum('total_due'))
+    total_accounts_receivable = receivable_agg['total_due_sum'] or decimal.Decimal('0.00')
+
 
     # Data for Pie Chart (Category Distribution)
     category_data = Category.objects.annotate(
@@ -77,7 +77,7 @@ def dashboard(request):
     # Data for Line Chart (Sales Over Time)
     sale_dates_data = (
         Sale.objects.values("date_added__date")
-        .annotate(total_sales_on_date=Sum("grand_total")) # Summing grand_total for daily sales
+        .annotate(total_sales_on_date=Sum("grand_total")) 
         .order_by("date_added__date")
     )
     sale_dates_labels_for_line = [
@@ -85,15 +85,11 @@ def dashboard(request):
     ]
     sale_dates_values_for_line = [float(sale_entry["total_sales_on_date"] or 0) for sale_entry in sale_dates_data]
 
-    # Pending Deliveries
     pending_deliveries = Delivery.objects.filter(is_delivered=False)
 
     # --- START OF PROFIT CALCULATION ---
-
-    # 1. Calculate Total Revenue using Sale.grand_total
     total_revenue_agg = all_sales_qs.aggregate(total_grand=Sum('grand_total'))
     total_revenue = total_revenue_agg['total_grand'] or decimal.Decimal('0.00')
-    # Ensure total_revenue is a Decimal
     if not isinstance(total_revenue, decimal.Decimal):
         try:
             total_revenue = decimal.Decimal(str(total_revenue))
@@ -101,36 +97,31 @@ def dashboard(request):
             logger.error(f"Could not convert total_revenue '{total_revenue_agg['total_grand']}' to Decimal. Defaulting to 0.")
             total_revenue = decimal.Decimal('0.00')
 
-    # 2. Calculate Total Cost of Goods Sold (COGS)
     total_cogs = decimal.Decimal('0.00')
-    item_latest_cost_cache = {} # Cache to store latest cost price for each item
+    item_latest_cost_cache = {} 
 
-    # Iterate through all items sold in all sales
     for sale_detail_item in SaleDetail.objects.select_related('item').all():
-        item_instance = sale_detail_item.item # Renamed for clarity
+        item_instance = sale_detail_item.item 
         item_id = item_instance.id
-        item_name = item_instance.name # For logging purposes
+        item_name = item_instance.name 
         
         cost_price_for_this_item = decimal.Decimal('0.00')
 
         if item_id in item_latest_cost_cache:
             cost_price_for_this_item = item_latest_cost_cache[item_id]
         else:
-            # Find the latest purchase record for this item to get its cost price
             latest_purchase = Purchase.objects.filter(item_id=item_id).order_by('-order_date').first()
             if latest_purchase:
-                cost_price_for_this_item = latest_purchase.price # Purchase.price is DecimalField
+                cost_price_for_this_item = latest_purchase.price 
                 item_latest_cost_cache[item_id] = cost_price_for_this_item
             else:
-                # Item sold, but no purchase record found (e.g., initial stock, data error).
                 logger.warning(
                     f"COGS Calculation: Item '{item_name}' (ID: {item_id}) sold (SaleDetail ID: {sale_detail_item.id}), "
                     f"but no Purchase record found for it. Cost assumed to be 0 for this item instance."
                 )
-                item_latest_cost_cache[item_id] = decimal.Decimal('0.00') # Cache this finding
+                item_latest_cost_cache[item_id] = decimal.Decimal('0.00') 
 
         try:
-            # SaleDetail.quantity is PositiveIntegerField
             quantity_sold = decimal.Decimal(str(sale_detail_item.quantity)) 
             cogs_for_this_detail_instance = cost_price_for_this_item * quantity_sold
             total_cogs += cogs_for_this_detail_instance
@@ -140,21 +131,19 @@ def dashboard(request):
                 f"Cost: {cost_price_for_this_item}, Quantity: {sale_detail_item.quantity}. Error: {e}"
             )
             
-    # 3. Calculate Profit
     total_profit = total_revenue - total_cogs
-    
     # --- END OF PROFIT CALCULATION ---
 
     context = {
-        "active_icon": "dashboard", # For active navigation state
+        "active_icon": "dashboard", 
         "items_count": items_count,
         "total_items_quantity": total_items_quantity,
         "profiles_count": profiles_count,
-        "delivery": pending_deliveries, # Or pending_deliveries.count() if you just need the number
+        "delivery": pending_deliveries, 
         "sales_count": all_sales_qs.count(),
         "total_accounts_receivable": total_accounts_receivable,
         
-        "total_profit": total_profit, # Pass total_profit to the template
+        "total_profit": total_profit, 
 
         "categories": categories_for_pie,
         "category_counts": category_counts_for_pie,
@@ -191,7 +180,6 @@ class ItemSearchListView(ProductListView):
 class ProductDetailView(LoginRequiredMixin, FormMixin, DetailView):
     model = Item
     template_name = "store/productdetail.html"
-    # form_class = ... # Add if you have a form on this detail view
     def get_success_url(self):
         return reverse("product-detail", kwargs={"slug": self.object.slug})
 
@@ -200,13 +188,7 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Item
     template_name = "store/productcreate.html"
     form_class = ItemForm
-    success_url = reverse_lazy("productslist") # Corrected to use reverse_lazy
-
-    # Remove test_func or implement UserPassesTestMixin if specific checks are needed before creation
-    # def test_func(self):
-    #     # This is for UserPassesTestMixin, not standard for CreateView
-    #     # Example: return self.request.user.is_staff
-    #     return True
+    success_url = reverse_lazy("productslist") 
 
 
 class ProductUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -230,14 +212,13 @@ class DeliveryListView(
     LoginRequiredMixin, ExportMixin, tables.SingleTableView
 ):
     model = Delivery
-    # table_class = DeliveryTable # Define this table in a tables.py if you have one for Delivery
     template_name = "store/deliveries.html"
     context_object_name = "deliveries"
     paginate_by = 10
 
 
 class DeliverySearchListView(DeliveryListView):
-    paginate_by = 10 # Redundant if DeliveryListView already defines it
+    paginate_by = 10 
     def get_queryset(self):
         result = super(DeliverySearchListView, self).get_queryset()
         query = self.request.GET.get("q")
@@ -245,7 +226,7 @@ class DeliverySearchListView(DeliveryListView):
             query_list = query.split()
             result = result.filter(
                 reduce(
-                    operator.and_, (Q(customer_name__icontains=q) for q in query_list) # Assuming Delivery has customer_name
+                    operator.and_, (Q(customer_name__icontains=q) for q in query_list) 
                 )
             )
         return result
@@ -272,7 +253,7 @@ class DeliveryUpdateView(LoginRequiredMixin, UpdateView):
 
 class DeliveryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Delivery
-    template_name = "store/delivery_confirm_delete.html" # Corrected template name
+    template_name = "store/delivery_confirm_delete.html" 
     success_url = reverse_lazy("deliveries")
     def test_func(self):
         return self.request.user.is_superuser
@@ -283,7 +264,6 @@ class CategoryListView(LoginRequiredMixin, ListView):
     template_name = 'store/category_list.html'
     context_object_name = 'categories'
     paginate_by = 10
-    # login_url = 'login' # Usually set globally in settings.py (LOGIN_URL)
 
 
 class CategoryDetailView(LoginRequiredMixin, DetailView):
@@ -315,27 +295,23 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('category-list')
 
 
-def is_ajax(request): # Helper function
+def is_ajax(request): 
     return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 
 
-@csrf_exempt # Use with caution, consider CSRF protection for POST if not strictly internal AJAX
-@require_POST # Ensures this view only accepts POST requests
+@csrf_exempt 
+@require_POST 
 @login_required
 def get_items_ajax_view(request):
-    # Redundant check if @require_POST and content type check is done
-    # if is_ajax(request):
-    if request.content_type == 'application/x-www-form-urlencoded': # Or application/json if sending JSON
+    if request.content_type == 'application/x-www-form-urlencoded': 
         try:
             term = request.POST.get("term", "")
             data = []
-            # Consider limiting the query if 'term' is empty
             items_qs = Item.objects.filter(name__icontains=term)
-            for item_obj in items_qs[:10]: # Limit to 10 results, renamed 'item' to 'item_obj'
+            for item_obj in items_qs[:10]: 
                 if hasattr(item_obj, 'to_json') and callable(item_obj.to_json):
                     data.append(item_obj.to_json())
                 else:
-                    # Fallback or log error if to_json doesn't exist
                     data.append({'id': item_obj.id, 'name': item_obj.name, 'price': str(item_obj.price)})
             return JsonResponse(data, safe=False)
         except Exception as e:

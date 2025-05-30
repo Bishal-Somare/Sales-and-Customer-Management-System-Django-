@@ -35,3 +35,7 @@ class IntegrityErrorMiddleware:
         
         # For other exceptions, let Django handle them
         return None
+    
+
+
+#handling 404 error

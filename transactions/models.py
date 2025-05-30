@@ -1,4 +1,6 @@
-from django.db import models
+
+
+from django.db import models, transaction # Added transaction import
 from django_extensions.db.fields import AutoSlugField
 from store.models import Item
 from accounts.models import Vendor, Customer
@@ -34,12 +36,12 @@ class Sale(models.Model):
         decimal_places=2,
         default=0.0
     )
-    tax_amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0.0
-    )
-    tax_percentage = models.FloatField(default=0.0)
+    # tax_amount = models.DecimalField( # Removed
+    #     max_digits=10,
+    #     decimal_places=2,
+    #     default=0.0
+    # )
+    # tax_percentage = models.FloatField(default=0.0) # Removed
     amount_paid = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -95,6 +97,7 @@ class Sale(models.Model):
         return decimal.Decimal('0.00')
 
 
+#sale lai render garni ho but sales detail chai sales kai page ma huncha
 class SaleDetail(models.Model):
     """
     Represents details of a specific sale, including item and quantity.
@@ -167,10 +170,54 @@ class Purchase(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Calculates the total value before saving the Purchase instance.
+        Calculates the total value and updates item quantity based on delivery status changes.
         """
         self.total_value = self.price * self.quantity
-        super().save(*args, **kwargs)
+
+        with transaction.atomic():
+            is_new = self._state.adding
+            old_purchase_data = {}
+
+            if not is_new:
+                try:
+                    # Fetch the original purchase instance from DB for comparison
+                    original_purchase = Purchase.objects.get(pk=self.pk)
+                    old_purchase_data['item_id'] = original_purchase.item_id
+                    old_purchase_data['quantity'] = original_purchase.quantity
+                    old_purchase_data['delivery_status'] = original_purchase.delivery_status
+                except Purchase.DoesNotExist:
+                    # Should not happen if not is_new, but if it does, old_purchase_data remains empty
+                    # and logic will proceed as if no prior state to undo.
+                    pass
+
+            super().save(*args, **kwargs)  # Save the Purchase instance itself
+
+            # --- Item Quantity Adjustment Logic ---
+
+            # "Undo" effect of the old state if it was 'Successful'
+            if not is_new and old_purchase_data.get('delivery_status') == "S":
+                try:
+                    item_to_undo = Item.objects.get(pk=old_purchase_data['item_id'])
+                    item_to_undo.quantity -= old_purchase_data['quantity']
+                    item_to_undo.save()
+                except Item.DoesNotExist:
+                    # Log this error or handle as appropriate if the item was unexpectedly deleted
+                    print(f"Warning: Item with ID {old_purchase_data['item_id']} not found for undoing quantity.")
+
+
+            # "Apply" effect of the new state if it is 'Successful'
+            if self.delivery_status == "S":
+                # self.item is the current item associated with the purchase
+                # self.quantity is the current quantity of the purchase
+                try:
+                    # Ensure we are acting on the correct item instance from the DB
+                    current_item_instance = Item.objects.get(pk=self.item.id)
+                    current_item_instance.quantity += self.quantity
+                    current_item_instance.save()
+                except Item.DoesNotExist:
+                    # Log this error or handle as appropriate
+                     print(f"Warning: Item with ID {self.item.id} not found for applying quantity.")
+
 
     def __str__(self):
         """

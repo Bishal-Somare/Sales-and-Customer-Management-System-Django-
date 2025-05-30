@@ -101,9 +101,8 @@
 </head>
 <body>
 
-<div class="receipt"> <!-- This div might be from saledetail.html context -->
+<div class="receipt"> 
     <section class="container-ticket">
-        <!-- Removed the inner div.ticket, section.container-ticket is the main container -->
         <div class="head-ticket">
             <p class="x-bold">GanaSalesLite</p>
             <p class="bold">Devdaha -9, Ghodaha</p>
@@ -116,15 +115,14 @@
 
         <div class="body-ticket">
             <div class="produits">
-                <!-- Item details would go here if needed, currently not in the template -->
-                <!-- Example: -->
-                <!-- {% for detail in sale.saledetail_set.all %}
+                <!-- Item details -->
+                 {% for detail in sale.saledetail_set.all %}
                 <div class="col2">
                     <p>{{ detail.quantity }} x {{ detail.item.name }}</p>
                     <p class="prix">Rs {{ detail.total_detail|floatformat:2 }}</p>
                 </div>
                 {% endfor %} 
-                <div class="hr-sm"></div> -->
+                <div class="hr-sm"></div>
 
                 <div class="col2">
                     <p>Sub Total:</p>
@@ -134,45 +132,59 @@
                     <p>Discount ({{ sale.discount_percentage|floatformat:2 }}%):</p>
                     <p class="prix">Rs {{ sale.discount_amount|floatformat:2 }}</p>
                 </div>
-                 <div class="col2">
-                    <p>Tax ({{ sale.tax_percentage|floatformat:2 }}%):</p>
-                    <p class="prix">Rs {{ sale.tax_amount|floatformat:2 }}</p>
-                </div>
                 <div class="hr-sm"></div>
                 <div class="col2">
-                    <p class="bold">Grand Total:</p>
+                    <p class="bold">Grand Total (This Sale):</p>
                     <p class="prix bold">Rs {{ sale.grand_total|floatformat:2 }}</p>
                 </div>
                 <div class="hr-sm"></div>
                 <div class="col2">
-                    <p>Amount Paid:</p>
+                    <p>Amount Paid (This Sale):</p>
                     <p class="prix">Rs {{ sale.amount_paid|floatformat:2 }}</p>
                 </div>
                 
+                {# REMOVED "Due (This Transaction)" section #}
+                {% comment %}
                 {% if sale.amount_to_pay > 0 %}
                 <div class="col2">
-                    <p>Amount to Pay:</p>
+                    <p>Due (This Transaction):</p>
                     <p class="prix">Rs {{ sale.amount_to_pay|floatformat:2 }}</p>
                 </div>
                 {% endif %}
+                {% endcomment %}
 
-                {% if sale.amount_change > 0 %} {# amount_change is sale.amount_paid - sale.grand_total #}
+                {% if sale.amount_change > 0 %} 
                 <div class="col2">
                     <p>Balance Returned:</p>
                     <p class="prix">Rs {{ sale.amount_change|floatformat:2 }}</p>
                 </div>
-                {% elif sale.amount_to_pay == 0 and sale.amount_change == 0 %} {# Paid exactly #}
+                {% elif sale.grand_total == sale.amount_paid %} {# If paid exactly, show 0.00 balance returned #}
                  <div class="col2">
                     <p>Balance Returned:</p>
                     <p class="prix">Rs 0.00</p>
                 </div>
                 {% endif %}
-                {# If amount_to_pay > 0, balance returned is implicitly 0 and not shown as "Balance Returned" #}
+                
+                {# Displaying customer's total outstanding balance AFTER this transaction #}
+                {% if sale.customer.total_due > 0 %}
+                <div class="hr-sm"></div>
+                <div class="col2">
+                    <p class="bold">Customer Total Due (Overall):</p>
+                    <p class="prix bold" style="color: red;">Rs {{ sale.customer.total_due|floatformat:2 }}</p>
+                </div>
+                {% elif sale.customer.total_due == 0 and not sale.amount_change > 0 and not sale.grand_total > sale.amount_paid %}
+                {# If total_due is 0, and it's not an overpayment or underpayment for this sale, explicitly show Rs 0.00 total due #}
+                <div class="hr-sm"></div>
+                <div class="col2">
+                    <p class="bold">Customer Total Due (Overall):</p>
+                    <p class="prix bold">Rs 0.00</p>
+                </div>
+                {% endif %}
 
             </div>
             <div class="hr-lg"></div>
             <div class="carte">
-                <p class="title-carte">Customer: {{ sale.customer.first_name }} {{ sale.customer.last_name }}</p>
+                <p class="title-carte">Customer: {{ sale.customer.get_full_name }}</p>
             </div>
             <div class="hr-lg"></div>
         </div>
@@ -184,22 +196,20 @@
 </div>
 
 <script>
-    // Generate the barcode using JsBarcode
-    const saleIdForBarcode = "{{ sale.id }}"; // Ensure sale.id is a simple string/number for barcode
+    const saleIdForBarcode = "{{ sale.id }}"; 
     if (document.getElementById("barcode") && saleIdForBarcode) {
         try {
-            JsBarcode("#barcode", "IMS" + saleIdForBarcode, { // Added prefix for context
+            JsBarcode("#barcode", "IMS" + saleIdForBarcode, { 
                 format: "CODE128",
                 lineColor: "#000",
-                width: 1.5, // Adjusted width
-                height: 40, // Adjusted height
-                displayValue: true, // Show value below barcode
-                fontSize: 12, // Font size for displayed value
-                margin: 5 // Margin around barcode
+                width: 1.5, 
+                height: 40, 
+                displayValue: true, 
+                fontSize: 12, 
+                margin: 5 
             });
         } catch (e) {
             console.error("JsBarcode error: ", e);
-            // Fallback or error message if JsBarcode fails
             document.getElementById("barcode").innerHTML = "<p style='color:red; font-size:10px;'>Barcode generation failed.</p>";
         }
     } else {

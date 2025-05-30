@@ -79,30 +79,7 @@
                         </a>
                     </div>
                     
-                    <!-- Sales Card -->
-                    <div class="col-12 col-sm-6 col-lg-3 col-xl-3 mb-3 mb-lg-0" id="sales"> <!-- Adjusted grid for 4 cards -->
-                        <a href="{% url 'saleslist' %}">
-                            <div class="card shadow border-0">
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-8 col-sm-7">
-                                            <span class="h6 font-semibold text-muted text-sm d-block mb-2">Sales Orders</span>
-                                            <span class="h3 font-bold mb-0">{{ sales_count }}</span>
-                                        </div>
-                                        <div class="col-4 col-sm-5 text-end">
-                                            <div class="icon icon-shape bg-warning text-white text-lg rounded-circle d-inline-flex align-items-center justify-content-center">
-                                                <i class="fa fa-shopping-cart"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mt-2 mb-0 text-sm">
-                                        <span class="text-nowrap text-xs text-muted">Completed transactions</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-
+                    
                     <!-- Accounts Receivable Card -->
                     <div class="col-12 col-sm-6 col-lg-3 col-xl-3 mb-3 mb-lg-0" id="receivables"> <!-- Adjusted grid for 4 cards -->
                         <a href="{% url 'saleslist' %}?status=pending_payment">
@@ -152,6 +129,30 @@
                             </div>
                         </a>
                     </div>
+                    <!-- Sales Card -->
+                    <div class="col-12 col-sm-6 col-lg-3 col-xl-3 mb-3 mb-lg-0" id="sales"> <!-- Adjusted grid for 4 cards -->
+                        <a href="{% url 'saleslist' %}">
+                            <div class="card shadow border-0">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-8 col-sm-7">
+                                            <span class="h6 font-semibold text-muted text-sm d-block mb-2">Sales Orders</span>
+                                            <span class="h3 font-bold mb-0">{{ sales_count }}</span>
+                                        </div>
+                                        <div class="col-4 col-sm-5 text-end">
+                                            <div class="icon icon-shape bg-warning text-white text-lg rounded-circle d-inline-flex align-items-center justify-content-center">
+                                                <i class="fa fa-shopping-cart"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 mb-0 text-sm">
+                                        <span class="text-nowrap text-xs text-muted">Completed transactions</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
                     
                     <!-- Other commented out cards from original file -->
                     {% comment %}

@@ -1,10 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
+import decimal # Import decimal
 
 from django_extensions.db.fields import AutoSlugField
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill
-from phonenumber_field.modelfields import PhoneNumberField
+# from phonenumber_field.modelfields import PhoneNumberField # Commented out or remove if not used elsewhere
 
 
 # Define choices for profile status and roles
@@ -40,8 +41,12 @@ class Profile(models.Model):
         processors=[ResizeToFill(150, 150)],
         options={'quality': 100}
     )
-    telephone = PhoneNumberField(
-        null=True, blank=True, verbose_name='Telephone'
+    # Changed from PhoneNumberField to CharField for custom local validation
+    telephone = models.CharField(
+        max_length=15,  # Allows for some flexibility, validation will enforce 10 digits
+        null=True,
+        blank=True,
+        verbose_name='Telephone'
     )
     email = models.EmailField(
         max_length=150, blank=True, null=True, verbose_name='Email'
@@ -125,16 +130,30 @@ class Customer(models.Model):
     address = models.TextField(max_length=256, blank=True, null=True)
     email = models.EmailField(max_length=256, blank=True, null=True)
     phone = models.CharField(max_length=30, blank=True, null=True)
-    loyalty_points = models.IntegerField(default=0)
+    # loyalty_points = models.IntegerField(default=0) # Commented out as per original
+    total_due = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=decimal.Decimal('0.00'), # Use decimal.Decimal for default
+        verbose_name="Total Due Amount"
+    )
+
 
     class Meta:
         db_table = 'Customers'
 
     def __str__(self) -> str:
-        return self.first_name + " " + self.last_name
+        full_name = self.first_name
+        if self.last_name:
+            full_name += " " + self.last_name
+        return full_name
+
 
     def get_full_name(self):
-        return self.first_name + " " + self.last_name
+        full_name = self.first_name
+        if self.last_name:
+            full_name += " " + self.last_name
+        return full_name
 
     def to_select2(self):
         item = {

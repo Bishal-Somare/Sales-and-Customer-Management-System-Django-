@@ -330,9 +330,11 @@ a {
 }
 
 /* Make the dropdown menu visible on hover */
+/*
 .dropdown:hover > .dropdown-menu {
   display: block;
 }
+*/
 .dropdown-menu {
   background-color: #495057;
   width: 100%; /* Full width dropdown items */

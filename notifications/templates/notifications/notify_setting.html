@@ -1,0 +1,81 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}Notification Settings{% endblock title %}
+
+{% block stylesheets %}
+<style>
+    .settings-panel {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: 40px auto;
+    }
+    .settings-panel h2 {
+        color: #333;
+        margin-bottom: 25px;
+        text-align: center;
+        font-weight: 600;
+    }
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .setting-item:last-child {
+        border-bottom: none;
+    }
+    .setting-item label {
+        font-size: 1rem;
+        color: #555;
+        margin-bottom: 0; /* Override bootstrap label margin */
+    }
+    .form-check-input {
+        width: 2.5em; /* Wider toggle */
+        height: 1.25em; /* Taller toggle */
+        cursor: pointer;
+    }
+    .form-switch .form-check-input {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.25%29'/%3e%3c/svg%3e");
+    }
+    .form-switch .form-check-input:checked {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="container">
+    <div class="settings-panel">
+        <h2><i class="fas fa-cogs me-2"></i>Notification Settings</h2>
+        
+        <div class="setting-item">
+            <label for="expiryNotificationsToggle">Expiry Notifications</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="expiryNotificationsToggle">
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <label for="lowStockNotificationsToggle">Low Stock Notifications</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="lowStockNotificationsToggle">
+            </div>
+        </div>
+        <div class="mt-3 text-muted small">
+            <p><i class="fas fa-info-circle me-1"></i> Changes are saved automatically to your browser.</p>
+            <p><i class="fas fa-info-circle me-1"></i> These settings control which real-time pop-up notifications you receive.</p>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+{{ block.super }}
+
+{% endblock javascripts %} 

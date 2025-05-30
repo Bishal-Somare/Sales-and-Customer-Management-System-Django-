@@ -39,14 +39,6 @@
             background-color: #17a2b8;
             color: white;
         }
-        .btn-outline-success { /* Style for Payed button */
-            border: 1px solid #28a745;
-            color: #28a745;
-        }
-        .btn-outline-success:hover {
-            background-color: #28a745;
-            color: white;
-        }
         .text-danger {
             color: red;
         }
@@ -65,11 +57,9 @@
             <th>Discount %</th>
             <th>Discount Amount</th>
             <th>Grand Total</th>
-            <th>Tax Amount</th>
-            <th>Tax Percentage</th>
             <th>Amount Paid</th>
-            <th>Amount to Pay</th> <!-- New Column -->
-            <th>Amount Change</th> <!-- Renamed from Balance for clarity with model -->
+            <!--<th>Amount to Pay (This Sale)</th> Removed this column -->
+            <th>Amount Change</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -84,10 +74,8 @@
             <td>{{ sale.discount_percentage|floatformat:2 }}</td>
             <td>{{ sale.discount_amount|floatformat:2 }}</td>
             <td>{{ sale.grand_total|floatformat:2 }}</td>
-            <td>{{ sale.tax_amount|floatformat:2 }}</td>
-            <td>{{ sale.tax_percentage|floatformat:2 }}</td>
             <td class="amount-paid">{{ sale.amount_paid|floatformat:2 }}</td>
-            <td class="amount-to-pay">{{ sale.amount_to_pay|floatformat:2 }}</td> <!-- Uses model property -->
+            <!-- <td class="amount-to-pay">{{ sale.amount_to_pay|floatformat:2 }}</td> Removed this cell -->
             <td class="amount-change">
                 {% if sale.amount_change > 0 %} <!-- Only show positive change -->
                     {{ sale.amount_change|floatformat:2 }}
@@ -97,18 +85,13 @@
             </td>
             <td>
                 <a class="btn btn-outline-info btn-sm" href="{% url 'sale-detail' sale.id %}">View Details</a>
-                {% if sale.amount_to_pay > 0 %} <!-- Show button only if there's an amount to pay -->
-                <button class="btn btn-outline-success btn-sm payed-btn" 
-                        data-sale-id="{{ sale.id }}">
-                    Payed
-                </button>
-                {% endif %}
-                <a class="text-danger float-center" href="{% url 'sale-delete' sale.id %}" title="Delete Sale">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" viewBox="0 0 16 16">
-                        <path d="M5.5 5.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm2.5.5a.5.5 0 0 1 1 0v6a.5.5 0 0 1-1 0v-6zm3-.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5z"/>
-                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2h3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1h3a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1 0-1z"/>
-                    </svg>
-                </a>
+                <a class="text-danger float-center" href="{% url 'sale-delete' sale.id %}" title="Cancel Sale">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" viewBox="0 0 16 16">
+        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 
+        .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 
+        2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+    </svg>
+</a>
             </td>
         </tr>
         {% endfor %}
