@@ -1,16 +1,27 @@
 {% extends "store/base.html" %} {% block title %}Confirm delete{% endblock %}
 {% block content %}
 <div class="container pt-5">
-    <form method="POST">
-        {% csrf_token %}
-        <fieldset class="form-group">
-            <legend class="border-bottom mb-4">Delete Sale</legend>
-            <h5>Are you sure you want to delete the sale "{{ object.slug }}"</h5>
-        </fieldset>
-        <div class="form-group">
-            <button class="btn btn-outline-danger btn-sm" type="submit">Yes, Delete</button>
-            <a class="btn btn-outline-success btn-sm" href="{% url 'saleslist' %}">Cancel</a>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <fieldset class="form-group">
+                    <legend class="border-bottom mb-4">Delete Sale</legend>
+                    <h5>Are you sure you want to delete Sale #{{ object.id }}?</h5>
+                    <p><strong>Customer:</strong> {{ object.customer }}</p>
+                    <p><strong>Date:</strong> {{ object.date_added|date:"Y-m-d H:i:s" }}</p>
+                    <p><strong>Grand Total:</strong> {{ object.grand_total|floatformat:2 }} Rs</p>
+                </fieldset>
+                <div class="form-group mt-3">
+                    <button class="btn btn-outline-danger btn-sm" type="submit">
+                        <i class="fas fa-trash-alt me-2"></i>Yes, Delete
+                    </button>
+                    <a class="btn btn-outline-success btn-sm" href="{% url 'saleslist' %}">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </div>
 {% endblock content %}

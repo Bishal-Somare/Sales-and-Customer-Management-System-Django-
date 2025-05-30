@@ -7,29 +7,32 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 0.875rem; /* Slightly smaller font for more content */
         }
         th, td {
             border: 1px solid #dddddd;
             text-align: center;
-            padding: 8px;
+            padding: 6px; /* Adjusted padding */
             vertical-align: middle; /* Align button nicely */
         }
         thead {
-            background-color: #f2f2f2;
+            background-color: #f8f9fa; /* Lighter head background */
         }
         th {
-            background-color: #4CAF50;
+            background-color: #28a745; /* Bootstrap success green */
             color: white;
+            font-weight: 600; /* Bolder headers */
         }
         /* Optional: Button styling */
         .btn {
             display: inline-block;
-            padding: 5px 10px;
-            margin: 2px; /* Adjusted margin */
-            font-size: 12px;
+            padding: 4px 8px; /* Smaller button padding */
+            margin: 2px; 
+            font-size: 0.8rem; /* Smaller button font */
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 0.2rem; /* Bootstrap's default sm border-radius */
             cursor: pointer;
+            transition: all 0.15s ease-in-out;
         }
         .btn-outline-info {
             border: 1px solid #17a2b8;
@@ -39,8 +42,32 @@
             background-color: #17a2b8;
             color: white;
         }
-        .text-danger {
-            color: red;
+        .btn-outline-warning { /* For Edit button */
+            border: 1px solid #ffc107;
+            color: #ffc107;
+        }
+        .btn-outline-warning:hover {
+            background-color: #ffc107;
+            color: #212529; /* Darker text on hover for warning */
+        }
+        .btn-outline-danger { /* For Cancel/Delete button if used */
+             border: 1px solid #dc3545;
+             color: #dc3545;
+        }
+        .btn-outline-danger:hover {
+             background-color: #dc3545;
+             color: white;
+        }
+        .text-danger { /* For SVG icon */
+            color: #dc3545 !important; /* Ensure high specificity */
+        }
+        .text-danger:hover {
+            color: #a71d2a !important; /* Darker red on hover */
+        }
+
+        .actions-cell { /* To ensure buttons fit well */
+            min-width: 150px; /* Adjust as needed */
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -54,45 +81,48 @@
             <th>Customer</th>
             <th>Items</th>
             <th>Sub Total</th>
-            <th>Discount %</th>
-            <th>Discount Amount</th>
+            <th>Disc. %</th>
+            <th>Disc. Amt.</th>
             <th>Grand Total</th>
-            <th>Amount Paid</th>
-            <!--<th>Amount to Pay (This Sale)</th> Removed this column -->
-            <th>Amount Change</th>
-            <th>Actions</th>
+            <th>Paid</th>
+            <th>Change</th>
+            <th class="actions-cell">Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for sale in sales %}
         <tr data-sale-id="{{ sale.id }}">
             <td>{{ sale.id }}</td>  
-            <td>{{ sale.date_added|date:"Y-m-d H:i:s" }}</td>
+            <td>{{ sale.date_added|date:"y-m-d H:i" }}</td> {# Shortened date #}
             <td>{{ sale.customer }}</td>
-            <td>{{ sale.get_items_display }}</td>
+            <td>{{ sale.get_items_display|truncatewords:5 }}</td> {# Truncate items display #}
             <td>{{ sale.sub_total|floatformat:2 }}</td>
             <td>{{ sale.discount_percentage|floatformat:2 }}</td>
             <td>{{ sale.discount_amount|floatformat:2 }}</td>
             <td>{{ sale.grand_total|floatformat:2 }}</td>
             <td class="amount-paid">{{ sale.amount_paid|floatformat:2 }}</td>
-            <!-- <td class="amount-to-pay">{{ sale.amount_to_pay|floatformat:2 }}</td> Removed this cell -->
             <td class="amount-change">
-                {% if sale.amount_change > 0 %} <!-- Only show positive change -->
+                {% if sale.amount_change > 0 %} 
                     {{ sale.amount_change|floatformat:2 }}
                 {% else %}
                     0.00
                 {% endif %}
             </td>
-            <td>
-                <a class="btn btn-outline-info btn-sm" href="{% url 'sale-detail' sale.id %}">View Details</a>
-                <a class="text-danger float-center" href="{% url 'sale-delete' sale.id %}" title="Cancel Sale">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" viewBox="0 0 16 16">
-        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 
-        .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 
-        2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-    </svg>
-</a>
+            <td class="actions-cell">
+                <a class="btn btn-outline-info btn-sm" href="{% url 'sale-detail' sale.id %}" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </a>
+                <a class="btn btn-outline-warning btn-sm" href="{% url 'sale-update' sale.id %}" title="Edit Sale"> {# EDIT BUTTON #}
+                    <i class="fas fa-edit"></i>
+                </a>
+                <a class="text-danger" href="{% url 'sale-delete' sale.id %}" title="Cancel Sale" style="padding: 5px;">
+                    <i class="fas fa-trash-alt fa-lg"></i> {# Using FontAwesome icon directly from base #}
+                </a>
             </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="11" class="text-center">No sales records found.</td>
         </tr>
         {% endfor %}
     </tbody>

@@ -7,12 +7,11 @@ from django.conf.urls.static import static
 from .views import (
     PurchaseListView, PurchaseDetailView, PurchaseCreateView,
     PurchaseUpdateView, PurchaseDeleteView, SaleListView,
-    SaleDetailView, SaleCreateView, SaleDeleteView, 
+    SaleDetailView, SaleCreateView, SaleUpdateView, SaleDeleteView, # SaleUpdateView is now the function
 
     export_sales_to_excel, export_purchases_to_excel,
     export_sales_to_pdf, export_detailed_sales_to_pdf,
     SaleCustomerSearchView,
-    # mark_sale_as_paid, # Removed this import
 )
 
 # URL patterns
@@ -27,12 +26,10 @@ urlpatterns = [
     # Sale URLs
     path('sales/', SaleListView.as_view(), name='saleslist'),
     path('sale/<int:pk>/', SaleDetailView.as_view(), name='sale-detail'),
-    path('new-sale/', SaleCreateView, name='sale-create'), # Use the function-based view
+    path('new-sale/', SaleCreateView, name='sale-create'), 
+    path('sale/<int:pk>/edit/', SaleUpdateView, name='sale-update'), # Points to the function view
     path('sale/<int:pk>/delete/', SaleDeleteView.as_view(), name='sale-delete'),
     
-    # REMOVED URL for marking sale as paid
-    # path('sale/<int:sale_id>/mark-as-paid/', mark_sale_as_paid, name='mark-sale-as-paid'),
-
     # Sales and purchases export
     path('sales/export/', export_sales_to_excel, name='sales-export'),
     path('purchases/export/', export_purchases_to_excel, name='purchases-export'),
@@ -42,5 +39,5 @@ urlpatterns = [
 ]
 
 # Static media files configuration for development
-if settings.DEBUG: # Typically, static files are served differently in production
+if settings.DEBUG: 
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
