@@ -1,0 +1,91 @@
+{% extends 'store/base.html' %}
+{% load static %}
+{% load humanize %} <!-- For number formatting if needed, e.g., {{ customer.total_due|intcomma }} -->
+
+{% block title %}Customer Dues{% endblock title %}
+
+{% block stylesheets %}
+    {{ block.super }}
+    <style>
+        .top-left-button-container {
+            margin-bottom: 20px;
+            padding-left: 1rem; 
+            padding-top: 1rem;
+        }
+        .dues-container { 
+            max-width: 900px; /* Wider for table */
+            margin: 0 auto 20px auto;
+            padding: 20px;
+            background-color: #fff; 
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+        }
+        .dues-container h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.75rem; 
+        }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        .table th {
+            background-color: #f8f9fa; /* Light grey for table header */
+        }
+        .action-button {
+            white-space: nowrap; /* Prevent button text from wrapping */
+        }
+    </style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="container-fluid px-2 px-md-4 py-3 py-md-5"> 
+    <div class="top-left-button-container">
+        <a href="{% url 'dashboard' %}" class="btn btn-success btn-sm"> 
+            <i class="fas fa-home me-2"></i>Back to Home
+        </a>
+    </div>
+
+    <div class="dues-container"> 
+        <h1><i class="fas fa-file-invoice-dollar me-2"></i>Customer Dues</h1>
+
+        {% if customers_with_dues %}
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Customer Name</th>
+                            <th scope="col" class="text-end">Total Dues (Rs.)</th>
+                            <th scope="col" class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers_with_dues %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ customer.get_full_name }}</td>
+                            <td class="text-end">{{ customer.total_due|floatformat:2 }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'notifications:send_due_reminders_page' %}?customer_id={{ customer.id }}" class="btn btn-primary btn-sm action-button">
+                                    <i class="fas fa-hand-holding-usd me-1"></i>Pay/Notify
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center" role="alert">
+                <i class="fas fa-info-circle me-2"></i>No customers currently have outstanding dues.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+    {{ block.super }} 
+    <!-- Add any page-specific JS here if needed -->
+{% endblock javascripts %}

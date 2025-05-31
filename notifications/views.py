@@ -11,11 +11,14 @@ from django.views.decorators.csrf import csrf_exempt # Only for AJAX if not hand
 from django.db.models import Sum, F, Q, Exists, OuterRef, Value, DecimalField
 from django.db.models.functions import Coalesce
 from django.db import transaction as django_transaction # For atomic operations
+import logging # Import logging
 
 # Assuming your models are in these locations
 from accounts.models import Customer
 from django.contrib.auth.decorators import login_required
 from transactions.models import Sale # Required to calculate due amounts
+
+logger = logging.getLogger(__name__) # Define logger for this module
 
 # Helper function to calculate total due for a customer (NOW USES Customer.total_due)
 def _get_customer_total_due(customer):
@@ -33,6 +36,7 @@ def get_customer_due_amount_ajax(request, customer_id):
             'due_amount': str(total_due.quantize(decimal.Decimal('0.01')))
         })
     except Exception as e:
+        logger.error(f"Error in get_customer_due_amount_ajax: {e}", exc_info=True)
         return JsonResponse({'error': str(e)}, status=500)
 
 @login_required
@@ -86,6 +90,7 @@ def send_due_reminder_page(request):
                     )
                     return JsonResponse({'message': f'Email sent successfully to {customer.get_full_name()}.', 'status': 'success'})
                 except Exception as e:
+                    logger.error(f"Failed to send single email to {customer.get_full_name()}: {e}", exc_info=True)
                     return JsonResponse({'error': f'Failed to send email to {customer.get_full_name()}: {str(e)}'}, status=500)
 
             elif action == 'send_all':
@@ -142,14 +147,17 @@ def send_due_reminder_page(request):
                     
                     return JsonResponse({'message': response_message, 'status': 'success', 'sent_count': num_sent})
                 except Exception as e:
+                    logger.error(f"Error during batch email sending: {e}", exc_info=True)
                     return JsonResponse({'error': f'Error during batch email sending: {str(e)}'}, status=500)
             
             else:
                 return JsonResponse({'error': 'Invalid action.'}, status=400)
 
         except json.JSONDecodeError:
+            logger.error("Invalid JSON data in send_due_reminder_page POST.", exc_info=True)
             return JsonResponse({'error': 'Invalid JSON data.'}, status=400)
         except Exception as e:
+            logger.error(f'An unexpected error occurred in send_due_reminder_page POST: {e}', exc_info=True)
             return JsonResponse({'error': f'An unexpected error occurred: {str(e)}'}, status=500)
     
     return JsonResponse({'error': 'Method not allowed.'}, status=405)
@@ -201,12 +209,11 @@ def record_partial_payment_ajax(request):
         })
 
     except json.JSONDecodeError:
+        logger.error("Invalid JSON data in record_partial_payment_ajax.", exc_info=True)
         return JsonResponse({'error': 'Invalid JSON data.'}, status=400)
     except Customer.DoesNotExist:
         return JsonResponse({'error': 'Customer not found.'}, status=404)
     except Exception as e:
-        # Log the exception e for debugging
-        print(f"Error in record_partial_payment_ajax: {e}") # Replace with proper logging
         logger.error(f"Error in record_partial_payment_ajax: {e}", exc_info=True)
         return JsonResponse({'error': f'An unexpected error occurred: {str(e)}'}, status=500)
 
@@ -217,3 +224,13 @@ def notify_settings_page(request):
         'active_icon': 'notification_settings', 
     }
     return render(request, 'notifications/notify_setting.html', context)
+
+@login_required
+def customer_due_list_view(request):
+    # Fetch customers with outstanding dues, ordered by name
+    customers_with_dues = Customer.objects.filter(total_due__gt=decimal.Decimal('0.00')).order_by('first_name', 'last_name')
+    context = {
+        'customers_with_dues': customers_with_dues,
+        'active_icon': 'customer_dues', # For navigation highlighting, if applicable
+    }
+    return render(request, 'notifications/customer_due_list.html', context)

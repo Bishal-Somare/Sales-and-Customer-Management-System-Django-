@@ -388,6 +388,16 @@
                     payFullAmountButton.disabled = isNaN(finalDue) || finalDue <=0;
                 });
             });
+
+            // Pre-select customer if customer_id is in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const preselectedCustomerId = urlParams.get('customer_id');
+            if (preselectedCustomerId && customerSelect) {
+                customerSelect.value = preselectedCustomerId;
+                // Dispatch a change event to trigger the due amount fetch and UI updates
+                const event = new Event('change', { bubbles: true });
+                customerSelect.dispatchEvent(event);
+            }
         });
     </script>
 {% endblock javascripts %}

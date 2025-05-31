@@ -153,6 +153,11 @@
                     <i class="fa fa-shopping-cart me-2"></i> Purchase Orders
                 </a>
             </li>
+            <li class="nav-item mb-2"> <!-- NEW CUSTOMER DUES LINK -->
+                <a class="nav-link text-light {% if active_icon == 'customer_dues' %}active{% endif %}" href="{% url 'notifications:customer_due_list' %}">
+                    <i class="fas fa-file-invoice-dollar fa-fw me-2"></i> Customer Dues
+                </a>
+            </li>
            <li class="nav-item mb-2">
                 <a class="nav-link text-light {% if request.resolver_match.app_name == 'notifications' and request.resolver_match.url_name == 'send_due_reminders_page' %}active{% endif %}" href="{% url 'notifications:send_due_reminders_page' %}">
                     <i class="fa fa-bell fa-fw me-2"></i> Due Reminders
