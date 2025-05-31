@@ -107,23 +107,27 @@
         <strong class="navbar-brand" style="font-size: 26px;">GanaSales<span class="text-warning">Lite</span></strong>
       </div>
       <div class="text-danger">
+        {% comment %}
+        <!-- General messages block: Commented out to prevent non-login messages from appearing -->
         {% if messages %} {% for message in messages %}
         <div class="alert alert-{{message.tags}}">
             {{ message }}
         </div>
         {% endfor %} {% endif %}
+        {% endcomment %}
 
-    {% if form.non_field_errors %}
-        <ul>
-            {% for error in form.non_field_errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-  </div>
+        {# This block displays login-specific errors like "Invalid username or password" #}
+        {% if form.non_field_errors %}
+            <ul>
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+      </div>
       <form class="login-form" method="POST">
         {% csrf_token %}
-        <p>{{ message }}</p>
+        <p>{{ message }}</p> {# This 'message' variable is likely from a context processor or view, unrelated to Django messages framework. Keep if needed for specific login view messages. #}
         <label>Username</label>
         <span class="text-danger">{{ form.username.errors }}</span>
         {{form.username}}
