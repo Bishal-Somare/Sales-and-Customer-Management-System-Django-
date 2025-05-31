@@ -225,6 +225,15 @@ def notify_settings_page(request):
     }
     return render(request, 'notifications/notify_setting.html', context)
 
+# @login_required
+# def customer_due_list_view(request):
+#     # Fetch customers with outstanding dues, ordered by name
+#     customers_with_dues = Customer.objects.filter(total_due__gt=decimal.Decimal('0.00')).order_by('first_name', 'last_name')
+#     context = {
+#         'customers_with_dues': customers_with_dues,
+#         'active_icon': 'customer_dues', # For navigation highlighting, if applicable
+#     }
+#     return render(request, 'notifications/customer_due_list.html', context)
 @login_required
 def customer_due_list_view(request):
     # Fetch customers with outstanding dues, ordered by name
