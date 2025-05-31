@@ -1,524 +1,509 @@
 {% extends "store/base.html" %}
 {% load static %}
-<!-- Page title  -->
+<!-- Page title -->
 {% block title %}{{ title|default:"Manage Sale" }}{% endblock title %}
-
-<!-- Specific Page CSS goes HERE  -->
+<!-- Specific Page CSS goes HERE -->
 {% block stylesheets %}
 <!--Select2 CSS-->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
 {% endblock stylesheets %}
-
 <!-- Page Heading -->
 {% if is_edit_mode %}
-    <h2>Edit Sale #{{ sale_instance.id }}</h2>
+<h2>Edit Sale #{{ sale_instance.id }}</h2>
 {% else %}
-    <h2>Add Sale</h2>
+<h2>Add Sale</h2>
 {% endif %}
-
-
-<!-- Page content  -->
+<!-- Page content -->
 {% block content %}
 <div class="container py-5">
-    <!-- Go back -->
-    <div class="mb-4">
-        <a href="{% url 'saleslist' %}" class="btn btn-outline-success">
-            <i class="fas fa-arrow-left me-2"></i>
-            Go back
-        </a>
-    </div>
-
-    <!-- Sale items and details -->
-    <form id="form_sale" action="{{ form_action_url }}" class="saleForm" method="post">
-        {% csrf_token %} {# CSRF token is needed for AJAX POST, but form won't be submitted traditionally #}
-        <div class="row">
-            <!-- Left column -->
-            <div class="col-lg-8 mb-4">
-                <div class="card border-light shadow-sm">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Sale Items</h5>
+<!-- Go back -->
+<div class="mb-4">
+<a href="{% url 'saleslist' %}" class="btn btn-outline-success">
+<i class="fas fa-arrow-left me-2"></i>
+Go back
+</a>
+</div>
+<!-- Sale items and details -->
+<form id="form_sale" action="{{ form_action_url }}" class="saleForm" method="post">
+    {% csrf_token %} {# CSRF token is needed for AJAX POST, but form won't be submitted traditionally #}
+    <div class="row">
+        <!-- Left column -->
+        <div class="col-lg-8 mb-4">
+            <div class="card border-light shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Sale Items</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Search item -->
+                    <div class="mb-4">
+                        <label for="searchbox_items" class="form-label">Search Item:</label>
+                        <select class="form-select select2" name="searchbox_items" id="searchbox_items" aria-label="Search items"></select>
                     </div>
-                    <div class="card-body">
-                        <!-- Search item -->
-                        <div class="mb-4">
-                            <label for="searchbox_items" class="form-label">Search Item:</label>
-                            <select class="form-select select2" name="searchbox_items" id="searchbox_items" aria-label="Search items"></select>
-                        </div>
 
-                        <!-- Delete all items from sale -->
-                        <button type="button" class="btn btn-danger btn-sm mb-4 deleteAll">
-                            <i class="fas fa-trash-alt me-2"></i> Delete All Items
-                        </button>
+                    <!-- Delete all items from sale -->
+                    <button type="button" class="btn btn-danger btn-sm mb-4 deleteAll">
+                        <i class="fas fa-trash-alt me-2"></i> Delete All Items
+                    </button>
 
-                        <!-- Items Table -->
-                        <div class="table-responsive my-3">
-                            <table class="table table-bordered table-striped" id="table_items">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Name</th>
-                                        <th>Price</th>
-                                        <th>Quantity</th>
-                                        <th>Total</th>
-                                        <th class="text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {# Rows will be populated by JavaScript #}
-                                </tbody>
-                            </table>
-                        </div>
+                    <!-- Items Table -->
+                    <div class="table-responsive my-3">
+                        <table class="table table-bordered table-striped" id="table_items">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {# Rows will be populated by JavaScript #}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-            <!-- End Left Column -->
-
-            <!-- Right Column -->
-            <div class="col-lg-4 mb-4">
-                <div class="card border-light shadow-sm">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Sale Details</h5>
-                    </div>
-                    <div class="card-body">
-                        {# {% csrf_token %}  Moved csrf_token to the main form tag #}
-                        <div class="mb-3">
-                            <label for="customer" class="form-label">Customer</label>
-                            <select name="customer" class="form-select" id="customer" aria-label="Customer" required>
-                                <option value="" selected disabled hidden>Select the customer</option>
-                                {% for customer_opt in customers %}
-                                    <option value="{{ customer_opt.value }}" {% if is_edit_mode and sale_instance.customer_id == customer_opt.value %}selected{% endif %}>
-                                        {{ customer_opt.label }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                         
-                        <div class="mb-3">
-                            <label for="discount_percentage" class="form-label">Discount (%)</label>
-                            <input name="discount_percentage" type="number" class="form-control" id="discount_percentage" aria-label="Discount Percentage" value="{{ sale_instance.discount_percentage|default:0 }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="discount_amount" class="form-label">Discount Amount</label>
-                            <input name="discount_amount" type="number" class="form-control" id="discount_amount" aria-label="Discount Amount" value="{{ sale_instance.discount_amount|default:0.00 }}" readonly required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="sub_total" class="form-label">Subtotal</label>
-                            <input name="sub_total" type="number" class="form-control" id="sub_total" aria-label="Subtotal" value="{{ sale_instance.sub_total|default:0.00 }}" readonly required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="grand_total" class="form-label">Grand Total</label>
-                            <input name="grand_total" type="number" class="form-control" id="grand_total" aria-label="Grand Total" value="{{ sale_instance.grand_total|default:0.00 }}" readonly required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="amount_paid" class="form-label">Amount Paid</label>
-                            <input name="amount_paid" type="number" class="form-control" id="amount_paid" aria-label="Amount Paid" value="{{ sale_instance.amount_paid|default:0.00 }}" required>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100">
-                            {% if is_edit_mode %}Update Sale{% else %}Create Sale{% endif %}
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <!-- End Right Column -->
         </div>
-    </form>
+        <!-- End Left Column -->
+
+        <!-- Right Column -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-light shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Sale Details</h5>
+                </div>
+                <div class="card-body">
+                    {# {% csrf_token %}  Moved csrf_token to the main form tag #}
+                    <div class="mb-3">
+                        <label for="customer" class="form-label">Customer</label>
+                        <select name="customer" class="form-select" id="customer" aria-label="Customer" required>
+                            <option value="" selected disabled hidden>Select the customer</option>
+                            {% for customer_opt in customers %}
+                                <option value="{{ customer_opt.value }}" {% if is_edit_mode and sale_instance.customer_id == customer_opt.value %}selected{% endif %}>
+                                    {{ customer_opt.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                     
+                    <div class="mb-3">
+                        <label for="discount_percentage" class="form-label">Discount (%)</label>
+                        <input name="discount_percentage" type="number" class="form-control" id="discount_percentage" aria-label="Discount Percentage" value="{{ sale_instance.discount_percentage|default:0 }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="discount_amount" class="form-label">Discount Amount</label>
+                        <input name="discount_amount" type="number" class="form-control" id="discount_amount" aria-label="Discount Amount" value="{{ sale_instance.discount_amount|default:0.00 }}" readonly required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sub_total" class="form-label">Subtotal</label>
+                        <input name="sub_total" type="number" class="form-control" id="sub_total" aria-label="Subtotal" value="{{ sale_instance.sub_total|default:0.00 }}" readonly required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="grand_total" class="form-label">Grand Total</label>
+                        <input name="grand_total" type="number" class="form-control" id="grand_total" aria-label="Grand Total" value="{{ sale_instance.grand_total|default:0.00 }}" readonly required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount_paid" class="form-label">Amount Paid</label>
+                        <input name="amount_paid" type="number" class="form-control" id="amount_paid" aria-label="Amount Paid" value="{{ sale_instance.amount_paid|default:0.00 }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        {% if is_edit_mode %}Update Sale{% else %}Create Sale{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- End Right Column -->
+    </div>
+</form>
+
 </div>
 {% endblock content %}
-
-<!-- Specific Page JS goes HERE  -->
+<!-- Specific Page JS goes HERE -->
 {% block javascripts %}
 <!-- Datatables -->
 <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js" defer></script>
 <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js" defer></script>
-
 <!-- Select2 -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
-
 <!-- Bootstrap Touchspin -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-touchspin/3.1.0/jquery.bootstrap-touchspin.min.js" defer></script>
-
 <!-- Sweet Alert -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.6.15/dist/sweetalert2.all.min.js" defer></script>
-
 <script>
-    // Source: https://stackoverflow.com/a/32605063
-    function roundTo(n, digits) {
-        if (digits === undefined) {
-            digits = 0;
-        }
-        var multiplicator = Math.pow(10, digits);
-        n = parseFloat((n * multiplicator).toFixed(11));
-        return Math.round(n) / multiplicator;
-    }
+// Source: https://stackoverflow.com/a/32605063
+function roundTo(n, digits) {
+if (digits === undefined) {
+digits = 0;
+}
+var multiplicator = Math.pow(10, digits);
+n = parseFloat((n * multiplicator).toFixed(11));
+return Math.round(n) / multiplicator;
+}
 
-    // Variable for item number in table, used if adding new items
-    var number = 1; 
+// Variable for item number in table, used if adding new items
+var number = 1;
 
-    // Variable to store sale details and products
-    var sale = {
-        products: {
-            customer: 0,
-            sub_total: 0.00,
-            discount_percentage: 0.00,
-            discount_amount: 0.00,
-            grand_total: 0.00,
-            amount_paid: 0.00,
-            amount_change: 0.00,
-            items: []
-        },
+// Variable to store sale details and products
+var sale = {
+products: {
+customer: 0,
+sub_total: 0.00,
+discount_percentage: 0.00,
+discount_amount: 0.00,
+grand_total: 0.00,
+amount_paid: 0.00,
+amount_change: 0.00,
+items: []
+},
 
-        calculate_sale: function () {
-            var sub_total = 0.00;
-            var discount_percentage = parseFloat($('input[name="discount_percentage"]').val()) || 0;
+calculate_sale: function () {
+var sub_total = 0.00;
+var discount_percentage = parseFloat($('input[name="discount_percentage"]').val()) || 0;
 
-            $.each(this.products.items, function (pos, dict) {
-                dict.pos = pos;
-                dict.total_item = roundTo(dict.quantity * dict.price, 2);
-                sub_total += roundTo(dict.total_item, 2);
-            });
+$.each(this.products.items, function (pos, dict) {
+dict.pos = pos;
+dict.total_item = roundTo(dict.quantity * dict.price, 2);
+sub_total += roundTo(dict.total_item, 2);
+});
 
-            this.products.sub_total = roundTo(sub_total, 2);
-            this.products.discount_amount = roundTo(this.products.sub_total * (discount_percentage / 100), 2);
-            var after_discount = roundTo(this.products.sub_total - this.products.discount_amount, 2);
-            this.products.grand_total = roundTo(after_discount, 2);
+this.products.sub_total = roundTo(sub_total, 2);
+this.products.discount_amount = roundTo(this.products.sub_total * (discount_percentage / 100), 2);
+var after_discount = roundTo(this.products.sub_total - this.products.discount_amount, 2);
+this.products.grand_total = roundTo(after_discount, 2);
 
-            $('input[name="sub_total"]').val(this.products.sub_total.toFixed(2));
-            $('input[name="discount_amount"]').val(this.products.discount_amount.toFixed(2));
-            $('input[name="grand_total"]').val(this.products.grand_total.toFixed(2));
-        },
+$('input[name="sub_total"]').val(this.products.sub_total.toFixed(2));
+$('input[name="discount_amount"]').val(this.products.discount_amount.toFixed(2));
+$('input[name="grand_total"]').val(this.products.grand_total.toFixed(2));
+},
 
-        add_item: function (item) {
-            // Check if item already exists
-            let existing_item = this.products.items.find(prod_item => prod_item.id === item.id);
-            if (existing_item) {
-                existing_item.quantity += item.quantity; // Or some other logic like replace or alert
-            } else {
-                this.products.items.push(item);
-            }
-            this.list_item();
-        },
-        
-        list_item: function () {
-            this.calculate_sale(); // Recalculate totals whenever the list changes
+add_item: function (item) {
+// Check if item already exists
+let existing_item = this.products.items.find(prod_item => prod_item.id === item.id);
+if (existing_item) {
+existing_item.quantity += item.quantity; // Or some other logic like replace or alert
+} else {
+this.products.items.push(item);
+}
+this.list_item();
+},
 
-            // Re-initialize DataTable
-            if ($.fn.DataTable.isDataTable('#table_items')) {
-                $('#table_items').DataTable().destroy();
-            }
+list_item: function () {
+this.calculate_sale(); // Recalculate totals whenever the list changes
 
-            tblItems = $("#table_items").DataTable({
-                destroy: true, // Ensure previous instance is destroyed
-                responsive: true,
-                autoWidth: false,
-                data: this.products.items,
-                columns: [
-                    {"data": "number"}, // This should be dynamically assigned or based on index
-                    {"data": "name"},
-                    {"data": "price"},
-                    {"data": "quantity"},
-                    {"data": "total_item"},
-                    {"data": "id"}, // For the delete button
-                ],
-                columnDefs: [
-                     {
-                        targets: [0], // Number column
-                        render: function (data, type, row, meta) {
-                            return meta.row + 1; // Display row number + 1
-                        }
-                    },
-                    {
-                        class: 'text-center',
-                        targets: [3], // Quantity
-                        render: function (data, type, row) {
-                            return '<input name="quantity" type="text" class="form-control form-control-xs text-center input-sm item-quantity" autocomplete="off" value="' + row.quantity + '">';
-                        },
-                    },
-                    {
-                        class: 'text-right',
-                        targets: [2, 4], // Price, Total
-                        render: function (data, type, row) {
-                            return parseFloat(data).toFixed(2) + ' Rs';
-                        },
-                    },
-                    {
-                        class: 'text-center',
-                        targets: [-1], // Actions
-                        orderable: false,
-                        render: function (data, type, row) {
-                            return '<a rel="delete" type="button" class="btn btn-sm btn-danger btn-delete-item" data-bs-toggle="tooltip" title="Delete item"> <i class="fas fa-trash-alt fa-xs"></i> </a>';
-                        },
-                    },
-                ],
-                rowCallback: function(row, data, displayNum, displayIndex, dataIndex) {
-                    // Assign unique id to quantity input for later reference if needed
-                    // $(row).find('input[name="quantity"]').attr('id', 'quantity_' + data.id);
-                    
-                    // Initialize TouchSpin for quantity inputs
-                    $(row).find("input[name='quantity']").TouchSpin({
-                        min: 1,
-                        max: data.stock || 1000, // Use actual stock if available, else a high number
-                        step: 1,
-                        decimals: 0,
-                        boostat: 1,
-                        maxboostedstep: 3,
-                        postfix: ''
-                    });
-                },
-                drawCallback: function(settings) {
-                    // This ensures that after table is drawn (e.g. after adding/removing items),
-                    // the number for new items starts correctly if we are adding more.
-                    number = sale.products.items.length + 1;
-                }
-            });
-        },
-        // Initialize sale for edit mode
-        init_edit_mode: function(customer_id, discount_perc, amount_pd, items_json_str) {
-            this.products.customer = customer_id;
-            $('select[name="customer"]').val(customer_id).trigger('change');
-            
-            this.products.discount_percentage = parseFloat(discount_perc);
-            $('input[name="discount_percentage"]').val(this.products.discount_percentage.toFixed(2));
+// Re-initialize DataTable
+if ($.fn.DataTable.isDataTable('#table_items')) {
+$('#table_items').DataTable().destroy();
+}
 
-            this.products.amount_paid = parseFloat(amount_pd);
-            $('input[name="amount_paid"]').val(this.products.amount_paid.toFixed(2));
+tblItems = $("#table_items").DataTable({
+destroy: true, // Ensure previous instance is destroyed
+responsive: true,
+autoWidth: false,
+data: this.products.items,
+columns: [
+{"data": "number"}, // This should be dynamically assigned or based on index
+{"data": "name"},
+{"data": "price"},
+{"data": "quantity"},
+{"data": "total_item"},
+{"data": "id"}, // For the delete button
+],
+columnDefs: [
+{
+targets: [0], // Number column
+render: function (data, type, row, meta) {
+return meta.row + 1; // Display row number + 1
+}
+},
+{
+class: 'text-center',
+targets: [3], // Quantity
+render: function (data, type, row) {
+return '<input name="quantity" type="text" class="form-control form-control-xs text-center input-sm item-quantity" autocomplete="off" value="' + row.quantity + '">';
+},
+},
+{
+class: 'text-right',
+targets: [2, 4], // Price, Total
+render: function (data, type, row) {
+return parseFloat(data).toFixed(2) + ' Rs';
+},
+},
+{
+class: 'text-center',
+targets: [-1], // Actions
+orderable: false,
+render: function (data, type, row) {
+return '<a rel="delete" type="button" class="btn btn-sm btn-danger btn-delete-item" data-bs-toggle="tooltip" title="Delete item"> <i class="fas fa-trash-alt fa-xs"></i> </a>';
+},
+},
+],
+rowCallback: function(row, data, displayNum, displayIndex, dataIndex) {
+// Assign unique id to quantity input for later reference if needed
+// $(row).find('input[name="quantity"]').attr('id', 'quantity_' + data.id);
 
-            if (items_json_str) {
-                try {
-                    let parsed_items = JSON.parse(items_json_str);
-                    // Ensure 'number' is correctly set for existing items for consistent display
-                    parsed_items.forEach((item, index) => {
-                        item.number = index + 1; 
-                    });
-                    this.products.items = parsed_items;
-                    number = this.products.items.length + 1; // Set 'number' for next new item
-                } catch (e) {
-                    console.error("Error parsing items JSON for edit mode:", e);
-                    this.products.items = [];
-                }
-            } else {
-                this.products.items = [];
-            }
-            this.list_item(); // This will also call calculate_sale
-        }
-    };
+// Initialize TouchSpin for quantity inputs
+$(row).find("input[name='quantity']").TouchSpin({
+min: 1,
+max: data.stock || 1000, // Use actual stock if available, else a high number
+step: 1,
+decimals: 0,
+boostat: 1,
+maxboostedstep: 3,
+postfix: ''
+});
+},
+drawCallback: function(settings) {
+// This ensures that after table is drawn (e.g. after adding/removing items),
+// the number for new items starts correctly if we are adding more.
+number = sale.products.items.length + 1;
+}
+});
+},
+// Initialize sale for edit mode
+init_edit_mode: function(customer_id, discount_perc, amount_pd, items_json_str) {
+this.products.customer = customer_id;
+$('select[name="customer"]').val(customer_id).trigger('change');
 
-    $(document).ready(function () {
-        const isEditMode = {{ is_edit_mode|yesno:"true,false" }};
-        
-        if (isEditMode) {
-            const initialCustomerId = '{{ sale_instance.customer_id|escapejs }}';
-            const initialDiscountPerc = '{{ sale_instance.discount_percentage|escapejs }}';
-            const initialAmountPaid = '{{ sale_instance.amount_paid|escapejs }}';
-            const initialItemsJson = '{{ sale_items_json|escapejs }}'; // Passed from Django view
-            sale.init_edit_mode(initialCustomerId, initialDiscountPerc, initialAmountPaid, initialItemsJson);
-        } else {
-            // For create mode, ensure table is initialized if needed, or just rely on add_item.
-             sale.list_item(); // Initialize empty table or with default data
-        }
+this.products.discount_percentage = parseFloat(discount_perc);
+$('input[name="discount_percentage"]').val(this.products.discount_percentage.toFixed(2));
 
+this.products.amount_paid = parseFloat(amount_pd);
+$('input[name="amount_paid"]').val(this.products.amount_paid.toFixed(2));
 
-        $("input[name='discount_percentage']").TouchSpin({
-            min: 0, max: 100, step: 0.1, decimals: 2, boostat: 5, maxboostedstep: 10, postfix: '%'
-        }).on('change', function () {
-            sale.calculate_sale();
-        });
-    
-        $("input[name='discount_amount']").prop('readonly', true);
-        $("input[name='sub_total']").prop('readonly', true);
-        $("input[name='grand_total']").prop('readonly', true);
+if (items_json_str) {
+try {
+let parsed_items = JSON.parse(items_json_str);
+// Ensure 'number' is correctly set for existing items for consistent display
+parsed_items.forEach((item, index) => {
+item.number = index + 1;
+});
+this.products.items = parsed_items;
+number = this.products.items.length + 1; // Set 'number' for next new item
+} catch (e) {
+console.error("Error parsing items JSON for edit mode:", e);
+this.products.items = [];
+}
+} else {
+this.products.items = [];
+}
+this.list_item(); // This will also call calculate_sale
+}
+};
 
-        $('#customer').select2({ theme: 'bootstrap4', placeholder: "Select a customer", allowClear: true });
-        
-        $('#customer').on('change', function() {
-            sale.products.customer = $(this).val();
-        });
-
-        $('#searchbox_items').select2({
-            theme: 'bootstrap4',
-            delay: 250,
-            placeholder: 'Search an item',
-            minimumInputLength: 1,
-            allowClear: true,
-            ajax: {
-                url: "{% url 'get_items' %}", // You need a URL that returns item data for select2
-                type: 'POST', // Or GET, depending on your 'get_items' view
-                dataType: 'json',
-                data: function (params) {
-                    return {
-                        term: params.term,
-                        action: 'search_items_for_sale', // Example action for your view
-                        csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
-                    };
-                },
-                processResults: function (data) {
-                    return { results: data }; // Ensure data is in {id: '', text: ''} format or use templateResult
-                },
-                cache: true
-            },
-            templateResult: function(data) { // Optional: Custom display for search results
-                if (!data.id) { return data.text; }
-                var $container = $(
-                    "<div class='select2-result-repository clearfix'>" +
-                        "<div class='select2-result-repository__title'></div>" +
-                        "<div class='select2-result-repository__description'></div>" +
-                    "</div>"
-                );
-                $container.find(".select2-result-repository__title").text(data.name || data.text); // Assuming 'name' from your item model
-                $container.find(".select2-result-repository__description").text("Price: " + data.price + " Rs, Stock: " + (data.stock || 'N/A'));
-                return $container;
-            },
-            templateSelection: function (data) { // Optional: Custom display for selected item
-                 return data.name || data.text;
-            }
-        }).on('select2:select', function (e) {
-            var data = e.params.data;
-            // data should include id, name, price, quantity (default to 1), stock
-            let item_to_add = {
-                id: data.id,
-                name: data.name || data.text, // 'name' if from your AJAX, 'text' if default select2
-                price: parseFloat(data.price),
-                quantity: 1, // Default quantity to add
-                stock: parseInt(data.stock) || 1000, // Available stock
-                // number will be assigned by list_item or add_item
-            };
-            item_to_add.number = sale.products.items.length + 1; // Tentative number
-            sale.add_item(item_to_add);
-            $(this).val(null).trigger('change'); // Clear searchbox
-        });
+// Item searchbox templateResult function (similar to sale_create.html)
+function template_item_searchbox(repo) {
+if (repo.loading) {
+return repo.text;
+}
+// Ensure repo.name is available, otherwise provide a fallback.
+const itemName = repo.name || 'Unnamed Item';
+return $(`
+<div class="card mb-3" style="border: none; margin-bottom: 5px !important;">
+<div class="card-body" style="padding: 5px 10px;">
+<small class="card-title" style="font-size: 0.9rem;">${itemName}</small>
+</div>
+</div>
+`);
+}
 
 
-        $('#table_items tbody').on('click', 'a[rel="delete"]', function () {
-            var tr = $(this).closest('tr');
-            var row = tblItems.row(tr);
-            var item_data = row.data(); // Get data of the row to be deleted
+$(document).ready(function () {
+const isEditMode = {{ is_edit_mode|yesno:"true,false" }};
 
-            Swal.fire({
-                title: "Delete item?",
-                text: `Remove "${item_data.name}" from the sale?`,
-                icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6', confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    sale.products.items.splice(row.index(), 1); // Remove item from JS array
-                    sale.list_item(); // Re-render table and recalculate
-                    Swal.fire('Deleted!', `"${item_data.name}" has been removed.`, 'success');
-                }
-            });
-        }).on('change', 'input[name="quantity"]', function () {
-            var quantity = parseInt($(this).val());
-            var tr = $(this).closest('tr');
-            var dataTable = $('#table_items').DataTable();
-            var rowIndex = dataTable.row(tr).index();
-            
-            if (sale.products.items[rowIndex]) {
-                 // Basic validation: ensure quantity is a positive number
-                if (isNaN(quantity) || quantity < 1) {
-                    quantity = 1; // Default to 1 if invalid
-                    $(this).val(quantity); // Update the input field
-                    Swal.fire('Invalid Quantity', 'Quantity must be at least 1.', 'warning');
-                }
-                // Optional: Check against stock if stock data is available in sale.products.items[rowIndex].stock
-                // if (quantity > sale.products.items[rowIndex].stock) {
-                //     quantity = sale.products.items[rowIndex].stock;
-                //     $(this).val(quantity);
-                //     Swal.fire('Stock Limit', 'Quantity cannot exceed available stock.', 'warning');
-                // }
-
-                sale.products.items[rowIndex].quantity = quantity;
-                sale.calculate_sale(); // Recalculate all totals
-                // DataTable's cell().data() can update, then draw()
-                dataTable.cell(tr, 4).data(roundTo(sale.products.items[rowIndex].quantity * sale.products.items[rowIndex].price, 2)).draw(false);
-            }
-        });
-
-        $('.deleteAll').on('click', function () {
-            if (sale.products.items.length === 0) return false;
-            Swal.fire({
-                title: 'Delete all items?', text: "This will clear all items from the current sale.",
-                icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6', confirmButtonText: 'Yes, delete all!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    sale.products.items = [];
-                    sale.list_item(); // Re-render and recalculate
-                    Swal.fire('Deleted!', 'All items have been removed.', 'success');
-                }
-            });
-        });
-
-        $('form#form_sale').on('submit', function (event) {
-            event.preventDefault();
-
-            var amountPaid = parseFloat($('input[name="amount_paid"]').val()) || 0;
-            var grandTotal = parseFloat($('input[name="grand_total"]').val()) || 0;
-            var amountChange = roundTo(amountPaid - grandTotal, 2);
-            if (amountChange < 0) amountChange = 0; // Change cannot be negative
-
-            var formData = {
-                customer: $('select[name="customer"]').val(),
-                sub_total: $('input[name="sub_total"]').val(),
-                discount_percentage: $('input[name="discount_percentage"]').val(),
-                discount_amount: $('input[name="discount_amount"]').val(),
-                grand_total: grandTotal.toFixed(2),
-                amount_paid: amountPaid.toFixed(2),
-                amount_change: amountChange.toFixed(2),
-                items: sale.products.items
-            };
-
-            if (!formData.customer) {
-                Swal.fire({icon: 'error', title: 'Error', text: 'Customer is required!'}); return;
-            }
-            if (formData.items.length === 0 && parseFloat(formData.sub_total) > 0) { // Allow 0 items if subtotal is 0 (e.g. cleared sale)
-                Swal.fire({icon: 'error', title: 'Error', text: 'Please add items to the sale or ensure subtotal is zero if no items!'}); return;
-            }
-             if (formData.items.length === 0 && parseFloat(formData.grand_total) > 0) {
-                Swal.fire({icon: 'error', title: 'Error', text: 'Sale has a grand total but no items. Please add items.'}); return;
-            }
+if (isEditMode) {
+const initialCustomerId = '{{ sale_instance.customer_id|escapejs }}';
+const initialDiscountPerc = '{{ sale_instance.discount_percentage|escapejs }}';
+const initialAmountPaid = '{{ sale_instance.amount_paid|escapejs }}';
+const initialItemsJson = '{{ sale_items_json|escapejs }}'; // Passed from Django view
+sale.init_edit_mode(initialCustomerId, initialDiscountPerc, initialAmountPaid, initialItemsJson);
+} else {
+// For create mode, ensure table is initialized if needed, or just rely on add_item.
+sale.list_item(); // Initialize empty table or with default data
+}
 
 
-            var csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+$("input[name='discount_percentage']").TouchSpin({
+min: 0, max: 100, step: 0.1, decimals: 2, boostat: 5, maxboostedstep: 10, postfix: '%'
+}).on('change', function () {
+sale.calculate_sale();
+});
 
-            $.ajax({
-                url: $(this).attr('action'), // This will be create or update URL
-                type: 'POST',
-                contentType: 'application/json',
-                headers: {'X-CSRFToken': csrftoken },
-                data: JSON.stringify(formData),
-                success: function (response) {
-                    if (response.status === 'success') {
-                        Swal.fire({
-                            icon: 'success', title: 'Success', text: response.message, timer: 2000, showConfirmButton: false
-                        }).then(() => {
-                            if(response.redirect){ window.location.href = response.redirect; }
-                        });
-                         // Optionally reset form for "create" mode, but not for "edit" mode
-                        if (!isEditMode) {
-                            sale.products.items = [];
-                            sale.list_item(); 
-                            $('form#form_sale').trigger('reset');
-                            $('#customer').val(null).trigger('change');
-                            $("input[name='discount_percentage']").val(0).trigger('change');
-                        }
-                    } else {
-                         Swal.fire({ icon: 'error', title: 'Error', text: response.message || 'An unknown error occurred.' });
-                    }
-                },
-                error: function (xhr, status, error) {
-                    let errorMsg = 'An error occurred while processing the sale!';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMsg = xhr.responseJSON.message;
-                    } else if (xhr.responseText) {
-                        try {
-                            let response = JSON.parse(xhr.responseText);
-                            if(response.message) errorMsg = response.message;
-                        } catch(e) { /* Use default errorMsg */ }
-                    }
-                    Swal.fire({ icon: 'error', title: 'Request Failed', text: errorMsg });
-                }
-            });
-        });
-    });
+$("input[name='discount_amount']").prop('readonly', true);
+$("input[name='sub_total']").prop('readonly', true);
+$("input[name='grand_total']").prop('readonly', true);
+
+$('#customer').select2({ theme: 'bootstrap4', placeholder: "Select a customer", allowClear: true });
+
+$('#customer').on('change', function() {
+sale.products.customer = $(this).val();
+});
+
+$('#searchbox_items').select2({
+theme: 'bootstrap4',
+delay: 250,
+placeholder: 'Search an item',
+minimumInputLength: 1,
+allowClear: true,
+ajax: {
+url: "{% url 'get_items' %}", // You need a URL that returns item data for select2
+type: 'POST', // Or GET, depending on your 'get_items' view
+dataType: 'json',
+data: function (params) {
+return {
+term: params.term,
+action: 'search_items_for_sale', // Example action for your view
+csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+};
+},
+processResults: function (data) {
+return { results: data };
+},
+cache: true
+},
+templateResult: template_item_searchbox, // MODIFIED: Use the new template function
+templateSelection: function (data) {
+return data.name || data.text;
+}
+}).on('select2:select', function (e) {
+var data = e.params.data;
+// data should include id, name, price, quantity (default to 1), stock
+let item_to_add = {
+id: data.id,
+name: data.name || data.text,
+price: parseFloat(data.price),
+quantity: 1, // Default quantity to add
+stock: parseInt(data.stock) || 1000, // Available stock
+};
+item_to_add.number = sale.products.items.length + 1;
+sale.add_item(item_to_add);
+$(this).val(null).trigger('change'); // Clear searchbox
+});
+
+
+$('#table_items tbody').on('click', 'a[rel="delete"]', function () {
+var tr = $(this).closest('tr');
+var row = tblItems.row(tr);
+var item_data = row.data();
+
+Swal.fire({
+title: "Delete item?",
+text: `Remove "${item_data.name}" from the sale?`,
+icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33',
+cancelButtonColor: '#3085d6', confirmButtonText: 'Yes, delete it!'
+}).then((result) => {
+if (result.isConfirmed) {
+sale.products.items.splice(row.index(), 1);
+sale.list_item();
+Swal.fire('Deleted!', `"${item_data.name}" has been removed.`, 'success');
+}
+});
+}).on('change', 'input[name="quantity"]', function () {
+var quantity = parseInt($(this).val());
+var tr = $(this).closest('tr');
+var dataTable = $('#table_items').DataTable();
+var rowIndex = dataTable.row(tr).index();
+
+if (sale.products.items[rowIndex]) {
+if (isNaN(quantity) || quantity < 1) {
+quantity = 1;
+$(this).val(quantity);
+Swal.fire('Invalid Quantity', 'Quantity must be at least 1.', 'warning');
+}
+sale.products.items[rowIndex].quantity = quantity;
+sale.calculate_sale();
+dataTable.cell(tr, 4).data(roundTo(sale.products.items[rowIndex].quantity * sale.products.items[rowIndex].price, 2)).draw(false);
+}
+});
+
+$('.deleteAll').on('click', function () {
+if (sale.products.items.length === 0) return false;
+Swal.fire({
+title: 'Delete all items?', text: "This will clear all items from the current sale.",
+icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33',
+cancelButtonColor: '#3085d6', confirmButtonText: 'Yes, delete all!'
+}).then((result) => {
+if (result.isConfirmed) {
+sale.products.items = [];
+sale.list_item();
+Swal.fire('Deleted!', 'All items have been removed.', 'success');
+}
+});
+});
+
+$('form#form_sale').on('submit', function (event) {
+event.preventDefault();
+
+var amountPaid = parseFloat($('input[name="amount_paid"]').val()) || 0;
+var grandTotal = parseFloat($('input[name="grand_total"]').val()) || 0;
+var amountChange = roundTo(amountPaid - grandTotal, 2);
+if (amountChange < 0) amountChange = 0;
+
+var formData = {
+customer: $('select[name="customer"]').val(),
+sub_total: $('input[name="sub_total"]').val(),
+discount_percentage: $('input[name="discount_percentage"]').val(),
+discount_amount: $('input[name="discount_amount"]').val(),
+grand_total: grandTotal.toFixed(2),
+amount_paid: amountPaid.toFixed(2),
+amount_change: amountChange.toFixed(2),
+items: sale.products.items
+};
+
+if (!formData.customer) {
+Swal.fire({icon: 'error', title: 'Error', text: 'Customer is required!'}); return;
+}
+if (formData.items.length === 0 && parseFloat(formData.sub_total) > 0) {
+Swal.fire({icon: 'error', title: 'Error', text: 'Please add items to the sale or ensure subtotal is zero if no items!'}); return;
+}
+if (formData.items.length === 0 && parseFloat(formData.grand_total) > 0) {
+Swal.fire({icon: 'error', title: 'Error', text: 'Sale has a grand total but no items. Please add items.'}); return;
+}
+
+
+var csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+
+$.ajax({
+url: $(this).attr('action'),
+type: 'POST',
+contentType: 'application/json',
+headers: {'X-CSRFToken': csrftoken },
+data: JSON.stringify(formData),
+success: function (response) {
+if (response.status === 'success') {
+Swal.fire({
+icon: 'success', title: 'Success', text: response.message, timer: 2000, showConfirmButton: false
+}).then(() => {
+if(response.redirect){ window.location.href = response.redirect; }
+});
+if (!isEditMode) {
+sale.products.items = [];
+sale.list_item();
+$('form#form_sale').trigger('reset');
+$('#customer').val(null).trigger('change');
+$("input[name='discount_percentage']").val(0).trigger('change');
+}
+} else {
+Swal.fire({ icon: 'error', title: 'Error', text: response.message || 'An unknown error occurred.' });
+}
+},
+error: function (xhr, status, error) {
+let errorMsg = 'An error occurred while processing the sale!';
+if (xhr.responseJSON && xhr.responseJSON.message) {
+errorMsg = xhr.responseJSON.message;
+} else if (xhr.responseText) {
+try {
+let response = JSON.parse(xhr.responseText);
+if(response.message) errorMsg = response.message;
+} catch(e) { /* Use default errorMsg */ }
+}
+Swal.fire({ icon: 'error', title: 'Request Failed', text: errorMsg });
+}
+});
+});
+});
 </script>
-
 {% endblock javascripts %}
