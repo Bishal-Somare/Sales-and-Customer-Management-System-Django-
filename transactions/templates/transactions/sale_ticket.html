@@ -108,7 +108,7 @@
             <p class="bold">Devdaha -9, Ghodaha</p>
             <p class="bold">Phone: +977 9848134815</p>
             <p>Date: {{ sale.date_added|date:"Y/m/d H:i:s" }}</p>
-            <p>Receipt Code: IMS{{ sale.id }}</p>
+            <p>Receipt Code: GanaSalesLite{{ sale.id }}</p>
             
             <svg id="barcode"></svg>
         </div>
@@ -199,7 +199,7 @@
     const saleIdForBarcode = "{{ sale.id }}"; 
     if (document.getElementById("barcode") && saleIdForBarcode) {
         try {
-            JsBarcode("#barcode", "IMS" + saleIdForBarcode, { 
+            JsBarcode("#barcode", "GanaSalesLite" + saleIdForBarcode, { 
                 format: "CODE128",
                 lineColor: "#000",
                 width: 1.5, 

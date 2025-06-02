@@ -52,7 +52,7 @@
                     <td>{{ item.category }}</td>
                     <td>{{ item.quantity }}</td>
                     <td>{{ item.price }}</td>
-                    <td>{{ item.expiring_date }}</td>
+                    <td>{{ item.expiring_date|date:"Y-m-d" }}</td> {# ADDED |date:"Y-m-d" filter #}
                     <td>{{ item.vendor }}</td>
                     <td>
                         <a class="btn btn-outline-info btn-sm" href="{% url 'product-update' item.slug %}">
@@ -74,13 +74,13 @@
             {% if page_obj.has_previous %}
             <li class="page-item">
                 <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
+                    <span aria-hidden="true">«</span>
                 </a>
             </li>
             {% else %}
             <li class="page-item disabled">
                 <span class="page-link" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
+                    <span aria-hidden="true">«</span>
                 </span>
             </li>
             {% endif %}
@@ -98,13 +98,13 @@
             {% if page_obj.has_next %}
             <li class="page-item">
                 <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
+                    <span aria-hidden="true">»</span>
                 </a>
             </li>
             {% else %}
             <li class="page-item disabled">
                 <span class="page-link" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
+                    <span aria-hidden="true">»</span>
                 </span>
             </li>
             {% endif %}

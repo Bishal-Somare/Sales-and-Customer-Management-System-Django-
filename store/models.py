@@ -46,7 +46,7 @@ class Item(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=0)
     price = models.FloatField(default=0)
-    expiring_date = models.DateTimeField(null=True, blank=True)
+    expiring_date = models.DateField(null=True, blank=True) # CHANGED: DateTimeField to DateField
     vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
@@ -71,6 +71,10 @@ class Item(models.Model):
         product['category'] = self.category.name
         product['quantity'] = 1
         product['total_product'] = 0
+        if self.expiring_date: # Ensure expiring_date is handled if it's None
+            product['expiring_date'] = self.expiring_date.strftime('%Y-%m-%d')
+        else:
+            product['expiring_date'] = None
         return product
 
     class Meta:

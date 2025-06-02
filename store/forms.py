@@ -33,10 +33,10 @@ class ItemForm(forms.ModelForm):
                     'step': '0.01'
                 }
             ),
-            'expiring_date': forms.DateTimeInput(
+            'expiring_date': forms.DateInput( # CHANGED: DateTimeInput to DateInput
                 attrs={
                     'class': 'form-control',
-                    'type': 'datetime-local'
+                    'type': 'date' # CHANGED: 'datetime-local' to 'date'
                 }
             ),
             'vendor': forms.Select(attrs={'class': 'form-control'}),
