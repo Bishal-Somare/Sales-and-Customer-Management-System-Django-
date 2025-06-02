@@ -22,11 +22,11 @@
                 40% { transform: translateX(2px) rotate(2deg); }
                 50% { transform: translateX(0) rotate(0); }
             }
-            .notification-bell-container.shake {
+            .notification-bell-container.shake { /* Applied to the anchor tag */
                 animation: shake 0.7s ease-in-out;
             }
 
-            .notification-bell-container {
+            .notification-bell-container { /* Parent of icon and badge for positioning */
                 position: relative; 
             }
             .notification-badge {
@@ -45,41 +45,29 @@
                 display: none; 
                 border: 1px solid white; 
                 box-shadow: 0 1px 2px rgba(0,0,0,0.2); 
-                z-index: 1; /* Ensure badge is above bell icon */
+                z-index: 1; 
             }
 
             /* --- Dropdown specific styling --- */
             .notifications-dropdown {
-                /* Bootstrap's .dropdown-menu provides position: absolute; */
-                /* .dropdown-menu-end aligns its right edge with the parent's right edge */
-                min-width: 300px; /* Sensible minimum */
-                max-width: 360px; /* A good max width for notifications */
-                /* width: auto; /* Let content and min/max define it */
-                max-height: 80vh; /* Max height to prevent very long lists */
+                min-width: 300px; 
+                max-width: 360px; 
+                max-height: 80vh; 
                 overflow-y: auto;
-                font-size: 0.9rem; /* Base for dropdown text */
+                font-size: 0.9rem; 
                 color: #212529; 
-                background-color: #ffffff; /* Ensure solid background */
+                background-color: #ffffff; 
                 background-clip: padding-box;
-                border: 1px solid #ced4da; /* Standard Bootstrap border color */
+                border: 1px solid #ced4da; 
                 border-radius: .375rem; 
-                box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); /* Standard shadow */
+                box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); 
                 margin-top: 0.3rem !important; 
-                
-                /* 
-                KEY CHANGE FOR OVERFLOW:
-                This transform is applied AFTER Bootstrap positions it with dropdown-menu-end.
-                We shift it left by almost its entire width minus a bit for the bell icon's width.
-                You may need to fine-tune '30px' or '40px'.
-                */
-                transform: translateX(calc(-100% + 40px)); /* Example: shift left by its width minus 40px */
-                                                            /* If bell is ~30px wide, this leaves 10px of bell visible on the right of dropdown */
-
-                /* Alternative if transform causes issues with sub-elements or is jittery:
-                   If you remove 'dropdown-menu-end' from the <ul> tag, you can try:
-                   right: 5px; /* Small offset from the very edge of the parent dropdown container 
-                   left: auto;
-                   This will align the right edge of the dropdown 5px from the right edge of its parent <li>
+                /*
+                The dropdown-menu-end class from Bootstrap handles right alignment.
+                If you need custom positioning beyond that, adjust here or consider removing dropdown-menu-end
+                and applying explicit right/left positioning.
+                The transform: translateX(calc(-100% + 40px)); was an attempt to keep it left-aligned from the bell.
+                With dropdown-menu-end, it should align its right edge with the bell's right edge.
                 */
             }
 
@@ -107,14 +95,14 @@
             .notification-reason {
                 font-weight: 600; 
                 color: #000; 
-                font-size: 0.95em; /* Relative to dropdown's 0.9rem base */
+                font-size: 0.95em;
                 display: block; 
                 margin-bottom: 0.2rem; 
                 line-height: 1.3;
             }
             .notification-message {
-                font-size: 0.9em; /* Relative to dropdown's 0.9rem base */
-                color: #2a2a2a; /* Dark text for message */
+                font-size: 0.9em;
+                color: #2a2a2a; 
                 display: block; 
                 line-height: 1.4; 
             }
@@ -131,6 +119,8 @@
             .notifications-dropdown .small-text-link a { 
                 font-size: 0.9em; 
                 padding: 0.6rem 1rem; 
+                display: block; /* Make it take full width for easier clicking */
+                text-align: center;
             }
         </style>
         {% block stylesheets %}{% endblock stylesheets %}
@@ -147,7 +137,7 @@
             @media (min-width: 768px) {
                 .navbar .container-fluid {
                     padding-left: 1rem;
-                    padding-right: 2rem; /* Decent padding from screen edge */
+                    padding-right: 2rem; 
                 }
             }
             @media (min-width: 992px) { #wrapper { margin-left: 250px; transition: margin-left 0.3s ease; } }
@@ -155,7 +145,7 @@
         </style>
     </head>
     <body>
-        {% include "store/sidebar.html" %} {# <<<< MAKE SURE TO FIX THE HOVER CSS IN THIS FILE #}
+        {% include "store/sidebar.html" %}
         <section id="wrapper">
             <nav class="navbar navbar-expand-md bg-success">
                 <div class="container-fluid"> 
@@ -175,16 +165,19 @@
                                 <i class="fas fa-bell text-white fs-5"></i>
                                 <span class="notification-badge" id="notificationBadge">0</span>
                             </a>
-                            {# Keeping dropdown-menu-end, as transform is designed to work with it #}
                             <ul class="dropdown-menu dropdown-menu-end notifications-dropdown" aria-labelledby="notificationBellDropdown">
                                 <div id="notificationList">
                                     <!-- Notifications will be injected here by JavaScript -->
                                 </div>
-                                <div id="noNotificationsMessageContainer">
-                                   <span id="noNotificationsMessage" style="color: #ffffff;">No new notifications</span>
+                                <div id="noNotificationsMessageContainer" style="display: none;">
+                                   <span id="noNotificationsMessage">No new notifications</span>
                                 </div>
                                  <li><hr class="dropdown-divider"></li>
-                                 {% comment %} <li class="small-text-link"><a class="dropdown-item text-center" href="{% url 'notifications:notify_settings_page' %}">Notification Settings</a></li> {% endcomment %}
+                                 <li class="small-text-link">
+                                     <a class="dropdown-item" href="{% url 'notifications:notify_settings_page' %}">
+                                         Notification Settings
+                                     </a>
+                                 </li>
                             </ul>
                           </li>
                           {% endif %}
@@ -202,6 +195,13 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         
         {% if user.is_authenticated %}
+        <script>
+            // Pass Django URLs to JavaScript global scope
+            const NOTIFICATIONS_URLS = {
+                getCached: "{% url 'notifications:get_cached_notifications' %}",
+                dismissNotificationBase: "{% url 'notifications:dismiss_notification' notification_id='0' %}" 
+            };
+        </script>
         <script src="{% static 'notifications/js/notifications.js' %}"></script>
         {% endif %}
 

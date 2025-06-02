@@ -12,13 +12,12 @@ import logging
 
 from accounts.models import Customer
 from django.contrib.auth.decorators import login_required
-# from transactions.models import Sale # Not directly used in these functions anymore for due calculation
+
+from .utils import get_notifications_from_cache, remove_notification_from_cache 
 
 logger = logging.getLogger(__name__)
 
 def _get_customer_total_due(customer):
-    # It's good practice to refresh if the customer object might be stale,
-    # though select_for_update in the calling function also helps.
     customer.refresh_from_db()
     return customer.total_due if customer.total_due is not None else decimal.Decimal('0.00')
 
@@ -63,7 +62,7 @@ def send_due_reminder_page(request):
                     return JsonResponse({'error': 'Customer ID is required.'}, status=400)
 
                 customer = get_object_or_404(Customer, pk=customer_id)
-                amount_due = _get_customer_total_due(customer) # Refreshes customer from DB
+                amount_due = _get_customer_total_due(customer) 
 
                 if amount_due <= 0:
                     logger.info(f"Send Single Reminder: Customer {customer.get_full_name()} has no dues (Due: {amount_due}). Email not sent.")
@@ -104,7 +103,7 @@ def send_due_reminder_page(request):
                 failed_customers = []
 
                 for customer_obj in customers_with_any_debt:
-                    amount_due = customer_obj.total_due # Already filtered, so this should be > 0
+                    amount_due = customer_obj.total_due 
                     if customer_obj.email:
                         email_context = {
                             'customer_name': customer_obj.get_full_name(),
@@ -184,7 +183,6 @@ def record_partial_payment_ajax(request):
             return JsonResponse({'error': 'Payment amount must be positive.'}, status=400)
 
         with django_transaction.atomic():
-            # Lock the customer row for update
             customer_locked = Customer.objects.select_for_update().get(pk=customer_id)
             current_due_before_payment = customer_locked.total_due if customer_locked.total_due is not None else decimal.Decimal('0.00')
             logger.info(f"Record Payment: Customer ID {customer_id}, Name: {customer_locked.get_full_name()}, Due Before: {current_due_before_payment}, Payment Received: {payment_amount}")
@@ -196,14 +194,10 @@ def record_partial_payment_ajax(request):
                 }, status=400)
 
             customer_locked.total_due -= payment_amount
-            if customer_locked.total_due < decimal.Decimal('0.00'): # Ensure not negative
+            if customer_locked.total_due < decimal.Decimal('0.00'): 
                 customer_locked.total_due = decimal.Decimal('0.00')
             customer_locked.save()
 
-            # Verify the save by re-fetching (optional, but good for robust logging)
-            # customer_after_save = Customer.objects.get(pk=customer_id)
-            # new_due_after_payment = customer_after_save.total_due
-            # The customer_locked instance should be up-to-date after .save() within the same transaction.
             new_due_after_payment = customer_locked.total_due
             logger.info(f"Record Payment: Customer ID {customer_id}, Due After Save (from locked instance): {new_due_after_payment}")
 
@@ -232,39 +226,59 @@ def notify_settings_page(request):
 @login_required
 def customer_due_list_view(request):
     logger.info("--- Entering customer_due_list_view ---")
-
-    # Initial queryset based on the filter
     customers_with_dues_qs = Customer.objects.filter(total_due__gt=decimal.Decimal('0.00')).order_by('first_name', 'last_name')
     logger.info(f"Customer Due List: Initial queryset count based on total_due > 0: {customers_with_dues_qs.count()}")
 
     customers_to_display = []
-    if customers_with_dues_qs.exists(): # Optimization: only loop if there are potential candidates
+    if customers_with_dues_qs.exists(): 
         for customer_in_qs in customers_with_dues_qs:
-            # FOR DEBUGGING: Re-fetch the customer individually
             try:
-                # Using refresh_from_db() on the existing instance from queryset
-                # This is slightly more efficient than Customer.objects.get() if the instance is already loaded
-                # but for ultimate certainty of a fresh read for debugging, .get() is fine too.
-                customer_in_qs.refresh_from_db(fields=['total_due']) # Only refresh total_due
-                
+                customer_in_qs.refresh_from_db(fields=['total_due']) 
                 logger.info(f"Customer Due List: Processing Customer: {customer_in_qs.get_full_name()} (ID: {customer_in_qs.pk}), Refreshed DB total_due: {customer_in_qs.total_due}")
-
                 if customer_in_qs.total_due is not None and customer_in_qs.total_due > decimal.Decimal('0.00'):
-                    customers_to_display.append(customer_in_qs) # Add the (potentially refreshed) instance
+                    customers_to_display.append(customer_in_qs) 
                     logger.info(f"  -> ADDING to display list. Name: {customer_in_qs.get_full_name()}, Due: {customer_in_qs.total_due}")
                 else:
                     logger.info(f"  -> SKIPPING from display list because refreshed total_due is {customer_in_qs.total_due}. Name: {customer_in_qs.get_full_name()}")
-            except Customer.DoesNotExist: # Should not happen if iterating queryset
+            except Customer.DoesNotExist: 
                 logger.error(f"Customer Due List: Customer with PK {customer_in_qs.pk} from initial queryset not found when re-fetching. This is very odd.")
                 continue
     else:
         logger.info("Customer Due List: Initial queryset was empty. No customers to process.")
 
-
     logger.info(f"Customer Due List: Final count of customers to display after individual checks: {len(customers_to_display)}")
-
     context = {
         'customers_with_dues': customers_to_display,
         'active_icon': 'customer_dues',
     }
     return render(request, 'notifications/customer_due_list.html', context)
+
+# --- NEW VIEWS ---
+@login_required
+@require_GET
+def get_cached_notifications_view(request):
+    """
+    Serves cached notifications for the logged-in user.
+    Client-side JS will filter these based on localStorage settings.
+    """
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Invalid request type.'}, status=400)
+        
+    notifications = get_notifications_from_cache(request.user)
+    return JsonResponse(notifications, safe=False)
+
+@login_required
+@require_POST 
+def dismiss_notification_view(request, notification_id):
+    """
+    Handles AJAX request to dismiss (remove from cache) a notification.
+    notification_id is part of the URL.
+    """
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Invalid request type.'}, status=400)
+
+    logger.info(f"User {request.user.username} attempting to dismiss notification ID: {notification_id}")
+    if remove_notification_from_cache(request.user, notification_id):
+        return JsonResponse({'status': 'success', 'message': 'Notification dismissed.'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Notification not found or could not be dismissed.'}, status=400)
