@@ -83,7 +83,18 @@
                                 <option value="{{ customer.value }}">{{ customer.label }}</option>
                                 {% endfor %}
                             </select>
-                        </div>
+                        </div> 
+                        {% comment %} <div class="mb-3">
+                        <label for="customer" class="form-label">Customer</label>
+                        <select name="customer" class="form-select" id="customer" aria-label="Customer" required>
+                            <option value="" selected disabled hidden>Select the customer</option>
+                            {% for customer_opt in customers %}
+                                <option value="{{ customer_opt.value }}" {% if is_edit_mode and sale_instance.customer_id == customer_opt.value %}selected{% endif %}>
+                                    {{ customer_opt.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div> {% endcomment %}
                          
                         <!-- New discount fields -->
                         <div class="mb-3">
