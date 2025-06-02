@@ -139,3 +139,35 @@ EMAIL_HOST_USER = "ganasaleslite@gmail.com" # Your actual email
 EMAIL_HOST_PASSWORD = "jhghdpvzfuxlxgmq"   # Your actual app password for Gmail
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 SERVER_EMAIL = EMAIL_HOST_USER
+
+# settings.py
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO', # Or 'DEBUG' for more verbosity
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO', # Keep Django's own logging at INFO or WARNING
+            'propagate': False,
+        },
+        'notifications': { # Specific logger for your app
+            'handlers': ['console'],
+            'level': 'INFO', # Or 'DEBUG'
+            'propagate': False,
+        },
+        'transactions': { # Specific logger for your app
+            'handlers': ['console'],
+            'level': 'INFO', # Or 'DEBUG'
+            'propagate': False,
+        },
+    },
+}
