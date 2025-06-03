@@ -33,20 +33,21 @@ class ItemAdmin(admin.ModelAdmin):
     list_filter = ('category', 'vendor')
     ordering = ('name',)
 
+#delevery has been failed 
 
-class DeliveryAdmin(admin.ModelAdmin):
-    """
-    Admin configuration for the Delivery model.
-    """
-    list_display = (
-        'item', 'customer_name', 'phone_number',
-        'location', 'date', 'is_delivered'
-    )
-    search_fields = ('item__name', 'customer_name')
-    list_filter = ('is_delivered', 'date')
-    ordering = ('-date',)
+# class DeliveryAdmin(admin.ModelAdmin):
+#     """
+#     Admin configuration for the Delivery model.
+#     """
+#     list_display = (
+#         'item', 'customer_name', 'phone_number',
+#         'location', 'date', 'is_delivered'
+#     )
+#     search_fields = ('item__name', 'customer_name')
+#     list_filter = ('is_delivered', 'date')
+#     ordering = ('-date',)
 
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Item, ItemAdmin)
-admin.site.register(Delivery, DeliveryAdmin)
+# admin.site.register(Delivery, DeliveryAdmin)
