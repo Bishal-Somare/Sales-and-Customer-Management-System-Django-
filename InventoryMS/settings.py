@@ -66,12 +66,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'InventoryMS.wsgi.application'
 ASGI_APPLICATION = 'InventoryMS.asgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 #discarding the sqllite
 #using postgresql
 DATABASES = {

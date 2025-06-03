@@ -284,7 +284,7 @@ def SaleUpdateView(request, pk):
                 'number': index + 1, 'id': detail.item.id, 'name': detail.item.name,
                 'price': float(detail.price), 'quantity': detail.quantity,
                 'total_item': float(detail.total_detail),
-                'stock': detail.item.quantity + detail.quantity,
+                'stock': detail.item.quantity + detail.quantity, # Stock available before this sale item was deducted
             })
         context = {
             "active_icon": "sales",
@@ -324,23 +324,27 @@ def SaleUpdateView(request, pk):
 
                     logger.info(f"SaleUpdateView: Original Sale (ID {pk}) - Customer: {original_customer.get_full_name() if original_customer else 'None'}, Due Contribution: {original_sale_due_contribution}")
 
+                    # Restock items from the original sale
                     for detail in sale_to_update.saledetail_set.all():
                         item = Item.objects.select_for_update().get(pk=detail.item_id)
                         item.quantity += detail.quantity
                         item.save()
                         logger.info(f"SaleUpdateView: Restocked {detail.quantity} of item '{item.name}' (ID: {item.id})")
 
+                    # Revert customer due contribution from the original sale state
                     if original_customer: 
                         original_customer_locked = Customer.objects.select_for_update().get(pk=original_customer.pk)
                         original_customer_old_due = original_customer_locked.total_due or decimal.Decimal('0.00')
                         original_customer_locked.total_due = original_customer_old_due - original_sale_due_contribution
-                        if original_customer_locked.total_due < decimal.Decimal('0.00'):
+                        if original_customer_locked.total_due < decimal.Decimal('0.00'): # Ensure due does not go negative
                             original_customer_locked.total_due = decimal.Decimal('0.00')
                         original_customer_locked.save()
                         logger.info(f"SaleUpdateView: Reverted due for original customer {original_customer_locked.get_full_name()}. Old due: {original_customer_old_due}, New temp due: {original_customer_locked.total_due}")
 
+                    # Delete old sale details
                     sale_to_update.saledetail_set.all().delete() 
 
+                    # Update sale header fields
                     form_grand_total_update = decimal.Decimal(data["grand_total"])
                     form_amount_paid_update = decimal.Decimal(data["amount_paid"])
                     calculated_amount_change_update = max(decimal.Decimal('0.00'), form_amount_paid_update - form_grand_total_update)
@@ -354,12 +358,15 @@ def SaleUpdateView(request, pk):
                     sale_to_update.grand_total = form_grand_total_update
                     sale_to_update.amount_paid = form_amount_paid_update
                     sale_to_update.amount_change = calculated_amount_change_update
-                    sale_to_update.save()
+                    # Date_added remains the original sale date, not updated here
+                    sale_to_update.save() # Save changes to sale header (including potentially new customer and financial figures)
                     logger.info(f"SaleUpdateView: Sale header updated for Sale ID: {sale_to_update.id}")
 
-                    if not updated_items_data and sale_to_update.sub_total > 0: 
-                         raise ValueError("Cannot update sale to have a subtotal without items.")
+                    # Handle items if any, and check for consistency
+                    if not updated_items_data and sale_to_update.sub_total > 0: # Or grand_total, depending on logic
+                         raise ValueError("Cannot update sale to have a subtotal/grandtotal without items.")
 
+                    # Create new sale details and deduct stock for new/updated items
                     for item_data_dict in updated_items_data:
                         if not all(k in item_data_dict for k in ["id", "price", "quantity", "total_item"]):
                              raise ValueError(f"Updated item data is missing required fields: {item_data_dict}")
@@ -382,7 +389,9 @@ def SaleUpdateView(request, pk):
                         item_instance.save()
                         logger.info(f"SaleUpdateView: Deducted {item_quantity_sold} of item '{item_instance.name}' (ID: {item_instance.id}) stock updated to {item_instance.quantity}")
 
+                    # Apply new customer due contribution from the updated sale state
                     new_customer_locked = Customer.objects.select_for_update().get(pk=new_customer_instance.pk)
+                    # sale_to_update.amount_to_pay will be calculated based on the NEWLY saved grand_total and amount_paid
                     current_sale_new_due_contribution = sale_to_update.amount_to_pay 
                     
                     new_customer_original_due = new_customer_locked.total_due or decimal.Decimal('0.00')
@@ -419,7 +428,8 @@ class SaleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return reverse_lazy("saleslist")
 
     def test_func(self):
-        return self.request.user.is_superuser or self.request.user.is_staff
+        # Allow staff or superuser to delete sales
+        return self.request.user.is_staff
 
     @django_transaction.atomic
     def form_valid(self, form):
@@ -429,14 +439,24 @@ class SaleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
         customer = sale_to_delete.customer
 
-        # MODIFICATION START: Customer.total_due is NOT changed upon sale deletion.
+        # --- Customer Due Adjustment ---
         if customer:
-            # Log current customer due, but do not change it.
-            customer_current_due_before_sale_delete = customer.total_due or decimal.Decimal('0.00')
-            logger.info(f"SaleDeleteView: Customer '{customer.get_full_name()}' (ID: {customer.pk}) - Their current total_due is {customer_current_due_before_sale_delete}. This value will NOT be altered by this sale (ID: {sale_to_delete.id}) deletion.")
+            try:
+                customer_locked = Customer.objects.select_for_update().get(pk=customer.pk)
+                # amount_to_pay property calculates (grand_total - amount_paid) if GT > AP, else 0
+                due_reduction_amount = sale_to_delete.amount_to_pay 
+
+                original_customer_total_due = customer_locked.total_due or decimal.Decimal('0.00')
+                customer_locked.total_due = original_customer_total_due - due_reduction_amount
+                # Ensure total_due doesn't go negative from this operation
+                customer_locked.total_due = max(decimal.Decimal('0.00'), customer_locked.total_due)
+                customer_locked.save()
+                logger.info(f"SaleDeleteView: Customer '{customer_locked.get_full_name()}' (ID: {customer_locked.pk}) total_due updated. Original: {original_customer_total_due}, Reduced by: {due_reduction_amount}, New total_due: {customer_locked.total_due}")
+            except Customer.DoesNotExist:
+                logger.error(f"SaleDeleteView: Customer with PK {customer.pk} for Sale ID {sale_to_delete.id} not found during due adjustment. Skipping due adjustment.")
         else:
-            logger.info(f"SaleDeleteView: Sale ID {sale_to_delete.id} has no associated customer. No customer total_due adjustment was applicable anyway.")
-        # MODIFICATION END
+            logger.info(f"SaleDeleteView: Sale ID {sale_to_delete.id} has no associated customer. No customer total_due adjustment applicable.")
+        # --- End Customer Due Adjustment ---
 
         # Restock items (this logic remains)
         logger.info(f"SaleDeleteView: Proceeding to restock items for Sale ID {sale_to_delete.id}.")
@@ -451,8 +471,8 @@ class SaleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
                 logger.error(f"SaleDeleteView: Item with PK {detail.item.pk} for SaleDetail ID {detail.id} not found during restock. Skipping.")
                 continue
 
-        messages.success(self.request, f"Sale ID {sale_to_delete.id} has been successfully deleted and items restocked. Customer dues remain unaffected by this specific deletion.")
-        response = super().form_valid(form) # This performs the actual deletion
+        messages.success(self.request, f"Sale ID {sale_to_delete.id} has been successfully deleted. Items restocked and customer dues adjusted accordingly.")
+        response = super().form_valid(form) # This performs the actual deletion of the Sale object
         logger.info(f"SaleDeleteView: Sale ID {sale_to_delete.id} successfully deleted from database.")
         return response
 
