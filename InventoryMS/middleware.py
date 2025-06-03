@@ -1,7 +1,7 @@
 from django.db import IntegrityError
 from django.shortcuts import render
 
-
+# integirty error lai handle garako
 class IntegrityErrorMiddleware:
     """
     Middleware to catch IntegrityError exceptions throughout the project

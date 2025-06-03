@@ -22,6 +22,7 @@ ROLE_CHOICES = [
 ]
 
 
+#profile ko data base ho hai
 class Profile(models.Model):
     """
     Represents a user profile containing personal and account-related details.
@@ -95,6 +96,8 @@ class Profile(models.Model):
         verbose_name_plural = 'Profiles'
 
 
+#vendor ko database bhanako hai yeha 
+
 class Vendor(models.Model):
     """
     Represents a vendor with contact and address information.
@@ -124,6 +127,7 @@ class Vendor(models.Model):
         verbose_name_plural = 'Vendors'
 
 
+#customer ko database bhanako hai yeha
 class Customer(models.Model):
     first_name = models.CharField(max_length=256)
     last_name = models.CharField(max_length=256, blank=True, null=True)
