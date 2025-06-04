@@ -68,7 +68,7 @@
                             <td class="text-end">{{ customer.total_due|floatformat:2 }}</td>
                             <td class="text-center">
                                 <a href="{% url 'notifications:send_due_reminders_page' %}?customer_id={{ customer.id }}" class="btn btn-primary btn-sm action-button">
-                                    <i class="fas fa-hand-holding-usd me-1"></i>Pay/Notify
+                                    <i class="fas fa-hand-holding-usd me-1"></i>Received/Notify
                                 </a>
                             </td>
                         </tr>
