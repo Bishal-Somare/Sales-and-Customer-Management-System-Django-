@@ -12,11 +12,6 @@
 
 ---
 
-## 📸 Demo
-
-> 📍 *Insert screenshots or a screen recording here to visually demonstrate your app!*
-
----
 
 ## 🚀 Features
 
