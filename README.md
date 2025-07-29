@@ -27,5 +27,38 @@
 
 ---
 
-## 📁 Folder Structure
+
+---
+
+## ⚙️ Tech Stack
+
+| Layer      | Technology                      |
+|------------|----------------------------------|
+| Backend    | Django 5.2 (Python)              |
+| Frontend   | HTML, CSS, JavaScript, AJAX     |
+| Database   | PostgreSQL (or SQLite optional) |
+| Extras     | `wkhtmltopdf` for PDF support   |
+
+---
+
+## ✅ Prerequisites
+
+Make sure the following tools are installed:
+
+- ✅ Python 3.9+
+- ✅ PostgreSQL (or SQLite)
+- ✅ pip
+- ✅ Git
+- ✅ `wkhtmltopdf` ➡ [Download](https://wkhtmltopdf.org/downloads.html)
+
+---
+
+## 🛠️ Local Setup Guide
+
+### 1️⃣ Clone the Repository
+
+```bash
+git clone https://github.com/Bishal-Somare/Sales-and-Customer-Management-System-Django-.git
+cd Sales-and-Customer-Management-System-Django-
+
 
