@@ -189,10 +189,10 @@ EMAIL_HOST_PASSWORD = 'your_app_password'
 ## 📸 Screenshots
 
 ### 🔹 Dashboard Overview
-![Dashboard](screenshots/dashboard.png)
+![Dashboard](screenshots/Dashboard.png)
 
 ### 🔹 Sales Order
-![Sales Order](screenshots/salesorder.png)
+![Sales Order](screenshots/sales order.png)
 
 
 
