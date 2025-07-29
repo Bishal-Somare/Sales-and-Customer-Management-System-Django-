@@ -186,4 +186,13 @@ EMAIL_HOST_PASSWORD = 'your_app_password'
 📝 Open a Pull Request
 ```
 
+## 📸 Screenshots
+
+### 🔹 Dashboard Overview
+![Dashboard](screenshots/dashboard.png)
+
+### 🔹 Sales Order
+![Sales Order](screenshots/salesorder.png)
+
+
 
