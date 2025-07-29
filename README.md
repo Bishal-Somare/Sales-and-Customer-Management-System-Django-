@@ -172,11 +172,6 @@ EMAIL_HOST_PASSWORD = 'your_app_password'
 
 ## 🌟 Future Enhancements
 
-* 📊 Dashboard with charts and analytics
-* 🧑‍💼 Role-based access (Admin, Staff, etc.)
-* 🎨 Custom invoice templates
-* 📥 Excel export
-* 🌍 Multi-language support
 * 🔐 REST API integration with Django REST Framework
 
 ---
@@ -190,47 +185,5 @@ EMAIL_HOST_PASSWORD = 'your_app_password'
 🚀 Push to the branch (git push origin feature)
 📝 Open a Pull Request
 ```
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** – see the `LICENSE` file for details.
-
----
-
-## 👨‍💻 Author
-
-Made with ❤️ by **[Bishal Somare](https://github.com/Bishal-Somare)**
-
----
-
-## 🔥 Next Suggestions (Optional)
-
-Want to make your GitHub page even more awesome?
-
-* 📸 Add screenshots of:
-
-  * Dashboard
-  * Admin panel
-  * PDF generation
-  * Email alert preview
-
-* 🎥 Create a short `demo.mp4` or `.gif` showing:
-
-  * Login ➡ low-stock alert ➡ send email ➡ generate PDF
-
-* ☁️ Deployment:
-
-  * If you want to deploy on Railway or PythonAnywhere, let me know — I’ll add the full deployment guide.
-
-```
-
----
-
-You're all set, Bishal! ✅  
-If you want me to help add images, a `demo.mp4`, `.env` setup using `python-decouple`, or anything else — just ask!
-```
-
 
 
