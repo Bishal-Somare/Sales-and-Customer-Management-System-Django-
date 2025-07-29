@@ -192,7 +192,7 @@ EMAIL_HOST_PASSWORD = 'your_app_password'
 ![Dashboard](screenshots/Dashboard.png)
 
 ### 🔹 Sales Order
-![Sales Order](screenshots/sales order.png)
+![Sales Order](screenshots/salesorder.png)
 
 
 
